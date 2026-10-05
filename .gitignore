@@ -1,0 +1,7 @@
+config.yaml
+state.json
+logs/run-*.json
+STOP
+__pycache__/
+.venv/
+state-real.json
