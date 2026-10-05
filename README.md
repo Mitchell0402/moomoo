@@ -36,10 +36,10 @@
 
 推荐在每个交易日美东时间上午 10:30 运行一次，避开开盘时最剧烈的波动。下面的时间请换算成你电脑所在的时区。电脑那天没开也没关系，第二天会照常检查。
 
-**Windows**：在本文件夹的命令提示符（cmd）里运行（把 10:30 改成你的本地时间）：
+**Windows**：在命令提示符（cmd）里运行下面这条。先把路径换成本文件夹的实际路径，再把 10:30 改成你的本地时间。路径要写完整，不要用 `%CD%`，在 PowerShell 里它不会被替换，任务会找不到程序：
 
 ```
-schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /TN "moomoo-autoinvest" /TR "cmd /c cd /d %CD% && .venv\Scripts\python -m autoinvest run --execute"
+schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /TN "moomoo-autoinvest" /TR "cmd /c cd /d C:\Users\你的用户名\Documents\moomoo && .venv\Scripts\python -m autoinvest run --execute"
 ```
 
 **macOS**：运行 `crontab -e`，加入一行（把路径换成本文件夹的实际路径）：
