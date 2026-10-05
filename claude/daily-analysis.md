@@ -15,7 +15,8 @@
    - `drawdown`：从高点的回撤
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
    - `signal_rules`：你必须遵守的边界
-   - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因
+   - `guards`、`guard_rules`：代码里的风险护栏。`guards.trend.below` 为 true 表示 SCHB 低于约 10 个月均线，此时股票合计上限是 `guards.stock_cap`；`guards.drawdown_brake` 为 true 表示回撤已超过刹车线，不能再加股票
+   - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因、护栏有没有动手
 2. 按下面“信息收集清单和预算”查看过去 24 小时影响美股和美债的重要信息，并记下链接。
 3. 读取 `signals/` 下最近 5 个交易日的历史指令（只看 `targets` 和 `rationale`），保持判断的连续性，避免来回反复。
 
@@ -72,10 +73,26 @@
 - 股票（`groups.stock`）合计必须在 `stock_min` 到 `stock_max` 之间。
 - 和 `current_targets` 相比，股票合计和每个 ETF 每天的变动都不能超过 `max_daily_change`。
 - 违反任何一条，本地程序会拒绝整份指令并沿用上一次的目标。所以写完后自己逐条核对一遍。
-- `drawdown` 超过 0.20 时，不要再提高股票比例。
+- `drawdown` 超过 0.20 时，不要再提高股票比例（代码也会强制）。
+- `guards.trend.below` 为 true 时，股票合计不要超过 `guards.stock_cap`。超过了代码会直接压下来，但你的理由就和实际执行对不上了。
 - 调整小于 `rebalance_band`（见 status.json）不会触发交易。没有足够理由时，直接沿用 `current_targets`。
 - 不要因为一天的涨跌就大幅调整。
 - `sources` 最多列 5 个真正用到的链接。
+
+## 远程急停
+
+Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库写一个空文件 `signals/HALT`，提交信息 `halt`，推送到 `main`。电脑下一次运行拉到它就不做任何操作。他说“恢复”时删掉这个文件。`signals/HALT` 存在期间照常写指令，但电脑不会推回新的 `data/status.json`，这是正常的，不要因此提醒他。
+
+## 什么时候提醒 Mitchell
+
+每天先看 `data/status.json` 的 `time` 和 `notes`。出现下面任何一种情况，就在项目线程里用一两句大白话提醒他，说清楚出了什么事、他要不要做什么：
+
+- 上一个交易日没有新的 `data/status.json`（`time` 早于上一个交易日美东 10:30），说明电脑、OpenD 或计划任务那天没在运行。
+- `notes` 里有“错误”或“警告”，或者你的指令被拒绝。
+- 护栏刚刚动手：`notes` 里第一次出现“趋势护栏”或“回撤刹车”（之后连续几天都有就不用重复提醒）。
+- 周五周报写好了（附链接）。
+
+其他时候不用打扰他。
 
 ## 提交
 

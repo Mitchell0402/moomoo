@@ -9,9 +9,14 @@
 - 只管理 `budget_usd` 这么多钱。模拟盘默认有大额虚拟资金，其余部分不会被动用。
 - 只买卖 `targets` 里列出的代码，只下当日有效的限价单，不碰期权、融资和做空。
 - 单笔不超过 1500 美元，每天合计不超过 2500 美元。
-- 已有未完成订单、当天已经下过单、不在美股常规交易时段时，都不下单。
-- 从高点回撤超过 25% 时在日志里提醒，但**不会因此卖出**。
+- 已有未完成订单、当天已经买过、不在美股常规交易时段时，都不下单。
+- 先卖后买：卖单成交、钱回到账户后才下买单（最多等 90 秒，没成交就留到当天下一次运行）。
+- **风险护栏**（写死在代码里，Claude 的指令和固定目标都要过这一关，见 `autoinvest/guards.py`）：
+  - SCHB 价格低于约 10 个月（210 个交易日）均线时，股票合计最多 40%。
+  - 从高点回撤超过 20% 时，不允许再加股票。
+- 从高点回撤超过 25% 时在日志里提醒。
 - 总开关：在本文件夹里放一个名为 `STOP` 的空文件，或把 `enabled` 改成 `false`，程序就不做任何操作。
+- 远程急停：不在电脑前时，在项目里跟 Claude 说“停”，Claude 会往仓库写 `signals/HALT`，电脑下一次运行拉到它就不做任何操作；说“恢复”就删掉它。
 
 ## 第一次安装（大约 30 分钟）
 
@@ -34,18 +39,24 @@
 
 ## 每天自动运行
 
-推荐在每个交易日美东时间上午 10:30 运行一次，避开开盘时最剧烈的波动。下面的时间请换算成你电脑所在的时区。电脑那天没开也没关系，第二天会照常检查。
+推荐每个交易日美东时间 10:30、12:30、14:30 各运行一次。程序一天最多买一次，多跑不会重复下单，只是让电脑晚开机、OpenD 临时掉线或卖单没及时成交时，当天还有机会补上。下面的时间请换算成你电脑所在的时区。
 
-**Windows**：在命令提示符（cmd）里运行下面这条。先把路径换成本文件夹的实际路径，再把 10:30 改成你的本地时间。路径要写完整，不要用 `%CD%`，在 PowerShell 里它不会被替换，任务会找不到程序：
+**Windows**：在命令提示符（cmd）里运行下面这条。先把路径换成本文件夹的实际路径，再把 10:30 改成你的本地时间。`/RI 120 /DU 05:00` 表示从 10:30 起每 2 小时再跑一次，共 3 次；`/F` 会覆盖同名的旧任务。路径要写完整，不要用 `%CD%`，在 PowerShell 里它不会被替换，任务会找不到程序：
 
 ```
-schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /TN "moomoo-autoinvest" /TR "cmd /c cd /d C:\Users\你的用户名\Documents\moomoo && .venv\Scripts\python -m autoinvest run --execute"
+schtasks /Create /F /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /RI 120 /DU 05:00 /TN "moomoo-autoinvest" /TR "cmd /c cd /d C:\Users\你的用户名\Documents\moomoo && .venv\Scripts\python -m autoinvest run --execute"
+```
+
+再在 PowerShell 里运行下面这条，让电脑错过时间（比如在睡眠）后醒来马上补跑：
+
+```
+$s = (Get-ScheduledTask -TaskName moomoo-autoinvest).Settings; $s.StartWhenAvailable = $true; Set-ScheduledTask -TaskName moomoo-autoinvest -Settings $s
 ```
 
 **macOS**：运行 `crontab -e`，加入一行（把路径换成本文件夹的实际路径）：
 
 ```
-30 10 * * 1-5 cd /Users/你的用户名/moomoo-autoinvest && .venv/bin/python -m autoinvest run --execute
+30 10,12,14 * * 1-5 cd /Users/你的用户名/moomoo-autoinvest && .venv/bin/python -m autoinvest run --execute
 ```
 
 ## 看结果
@@ -61,7 +72,7 @@ schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /TN "moomoo-autoinv
 1. 美东 8:07 左右，Claude 的定时任务读取仓库里的 `data/status.json`（持仓、价格走势）和当天新闻，写出今天的目标比例和理由，提交到 GitHub。
 2. 美东 10:30，本程序先 `git pull` 拿到指令，校验通过后按新目标调仓，再把最新的 `data/status.json` 和 `logs/summary.csv` 推回 GitHub。
 
-Claude 的权限由 `config.yaml` 的 `signal` 部分限制：只能用白名单里的 4 只 ETF，股票合计在 40%–75% 之间，每天最多变动 10 个百分点。指令不合规、过期或缺失时，程序沿用上一次的目标，并在日志里写明原因。日志里的 `benchmark_value` 是同样 2000 美元按固定 60/40 运行的对照线，用来判断 Claude 的调整有没有帮上忙。Claude 的分析规则写在 `claude/daily-analysis.md`。
+Claude 的权限由 `config.yaml` 的 `signal` 部分限制：只能用白名单里的 4 只 ETF，股票合计在 40%–75% 之间，每天最多变动 10 个百分点。指令不合规、过期或缺失时，程序沿用上一次的目标，并在日志里写明原因。通过校验的目标还要再过一遍上面的风险护栏，护栏会直接把股票比例压下来，不受每天 10 个百分点的限制。日志里的 `benchmark_value` 是同样 2000 美元按固定 60/40 运行的对照线，用来判断 Claude 的调整有没有帮上忙。Claude 的分析规则写在 `claude/daily-analysis.md`。
 
 打开方法：把 `config.yaml` 里 `signal` 下的 `enabled` 改成 `true`，然后告诉 Claude，Claude 会设好每天的分析任务。程序要在用 `git clone` 下载的这个文件夹里运行，才能和 GitHub 同步。
 
@@ -90,6 +101,8 @@ Claude 的权限由 `config.yaml` 的 `signal` 部分限制：只能用白名单
 ## 切换到实盘（模拟两周没问题之后）
 
 切换前先确认这三件事：模拟盘里两只 ETF 都买到了；`logs/summary.csv` 里每天都有记录且没有“错误”；App 里模拟盘的持仓和日志里的 holdings 一致。
+
+实盘默认按账户真实的持仓和现金来管理（`ledger: auto`），这样 ETF 的分红到账后会自动再投资。所以**实盘账户里只放给这个程序的钱**；如果账户里还有别的现金要留着不动，把金额填在 `cash_reserve_usd`。
 
 1. 往 moomoo 实盘账户入金 2000 美元，等资金到账。
 2. 在 OpenD 里确认实盘交易已解锁（界面上方会显示解锁状态和到期时间，到期前点“延长授权”）。

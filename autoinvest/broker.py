@@ -102,6 +102,14 @@ class MoomooBroker:
             rows[r["order_id"]] = r
         return list(rows.values())
 
+    def order_status(self, order_ids: list[str]) -> dict[str, str]:
+        """今天这些订单的当前状态，例如 SUBMITTED、FILLED_ALL。"""
+        df = self._check(*self.trade.order_list_query(trd_env=self.env, acc_id=self.acc_id, refresh_cache=True),
+                         "查询今日订单")
+        wanted = set(order_ids)
+        return {str(r["order_id"]): str(r["order_status"]) for r in df.to_dict("records")
+                if str(r["order_id"]) in wanted}
+
     def place_limit(self, code: str, side: str, qty: int, price: float, remark: str) -> str:
         from moomoo import OrderType, TimeInForce, TrdSide
 

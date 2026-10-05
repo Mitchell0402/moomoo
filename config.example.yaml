@@ -26,6 +26,25 @@ max_order_value_usd: 1500   # 单笔上限
 max_daily_value_usd: 2500   # 每天成交总额上限
 alert_drawdown: 0.25     # 从高点回撤超过 25% 时在日志里提醒（不会自动卖出）
 require_market_open: true   # 只在美股常规交易时段下单
+sell_fill_timeout_sec: 90   # 先卖后买：最多等卖单成交这么多秒，没成交就把买单留到下一次运行
+
+# 持仓和现金怎么算：
+#   orders  = 按本程序下过的单推算（模拟盘里有大量虚拟资金，用这个）
+#   account = 以账户真实持仓和现金为准，分红自动计入（实盘账户里只放这笔钱时用）
+#   auto    = 模拟盘用 orders，实盘用 account
+ledger: auto
+cash_reserve_usd: 0      # account 模式下账户里留着不动的现金
+
+# ---- 风险护栏：写死在代码里，Claude 的指令和固定目标都要过这一关 ----
+# 没有这一段时也按下面的默认值启用
+guards:
+  enabled: true
+  trend_code: US.SCHB          # 用它判断趋势
+  trend_days: 210              # 约 10 个月均线
+  stock_max_below_trend: 0.40  # 价格低于均线时，股票合计最多 40%
+  drawdown_no_add: 0.20        # 从高点回撤超过 20% 时，不允许再加股票
+  stock_codes: [US.SCHB, US.SCHF]
+  bond_code: US.SCHZ           # 压下来的股票比例放到债券；目标里已有债券时按原有比例分
 
 log_dir: logs
 
