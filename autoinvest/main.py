@@ -14,14 +14,16 @@ import datetime as dt
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
+from . import guards
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
-from .strategy import build_ledger, plan_rebalance
+from .strategy import Ledger, build_ledger, plan_rebalance
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -95,6 +97,34 @@ def update_shadows(state: dict, sh_cfg: dict, closes: dict, prices: dict, budget
     return values
 
 
+def ledger_mode(cfg: dict) -> str:
+    """orders：按本程序下过的单推算持仓和现金（模拟盘里有大量虚拟资金时用）；
+    account：直接以账户真实持仓和现金为准，分红自动计入（实盘账户只放这笔钱时用）。"""
+    mode = cfg.get("ledger", "auto")
+    if mode == "auto":
+        return "account" if cfg["trd_env"] == "REAL" else "orders"
+    if mode not in ("orders", "account"):
+        sys.exit(f"ledger 只能是 auto、orders 或 account，现在是 {mode}")
+    return mode
+
+
+FILLED = "FILLED_ALL"
+
+
+def wait_filled(broker, order_ids: list[str], timeout: float, interval: float = 5) -> bool:
+    """等卖单全部成交。超时、或订单被撤销/失败，返回 False。"""
+    deadline = time.monotonic() + timeout
+    while True:
+        status = broker.order_status(order_ids)
+        if all(status.get(i) == FILLED for i in order_ids):
+            return True
+        if any(status.get(i) not in OPEN_ORDER_STATUSES | {FILLED, None} for i in order_ids):
+            return False
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(interval)
+
+
 def git(*args: str) -> tuple[bool, str]:
     try:
         p = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, timeout=120)
@@ -132,6 +162,13 @@ def main(argv=None):
         if not ok:
             record["notes"].append(f"拉取 Claude 指令失败（git pull）：{out[-200:]}")
 
+    if (ROOT / "signals" / "HALT").exists():
+        # 远程急停：Mitchell 在项目里说"停"，Claude 往仓库写 signals/HALT，下一次运行就不再交易
+        record["notes"].append("远程急停已打开（signals/HALT），不做任何操作")
+        print(record["notes"][-1])
+        write_log(log_dir, record)
+        return 0
+
     state = load_state(state_path)
     bench_targets = cfg["targets"]
     if use_signal:
@@ -146,7 +183,13 @@ def main(argv=None):
     else:
         codes = list(bench_targets)
         targets = dict(bench_targets)
+    g = guards.settings(cfg)
+    if g["enabled"] and g["bond_code"] not in codes:
+        codes.append(g["bond_code"])
+        targets.setdefault(g["bond_code"], 0.0)
+    prev_targets = state.get("targets") or bench_targets
     record["targets"] = targets
+    shadow_fresh = False
 
     remark = cfg.get("remark", "autoinvest-v1")
     broker = None
@@ -156,23 +199,42 @@ def main(argv=None):
         record["acc_id"] = broker.acc_id
         orders = broker.orders_since(dt.date.fromisoformat(str(cfg["start_date"])))
         ours = [o for o in orders if o.get("remark") == remark]
-        ledger = build_ledger(cfg["budget_usd"], ours, remark, codes)
         prices = broker.prices(codes)
         account_cash = broker.account_cash()
+        mode_ledger = ledger_mode(cfg)
+        record["ledger_mode"] = mode_ledger
+        if mode_ledger == "account":
+            actual = broker.positions()
+            ledger = Ledger(cash=account_cash - float(cfg.get("cash_reserve_usd", 0)),
+                            holdings={c: actual.get(c, 0.0) for c in codes})
+        else:
+            ledger = build_ledger(cfg["budget_usd"], ours, remark, codes)
         sh_cfg = cfg.get("shadows") or {}
-        close_codes = list(dict.fromkeys(codes + [c for c in (sh_cfg.get("stock"), sh_cfg.get("bond")) if c]))
-        closes = broker.daily_closes(close_codes, int(sh_cfg.get("history_days", 300)))
+        close_codes = list(dict.fromkeys(codes + [c for c in (sh_cfg.get("stock"), sh_cfg.get("bond"),
+                                                              g["trend_code"]) if c]))
+        hist_days = max(int(sh_cfg.get("history_days", 300)), int(g["trend_days"]) + 10)
+        closes = broker.daily_closes(close_codes, hist_days)
         extra = [c for c in close_codes if c not in prices]
         if extra:
             prices.update(broker.prices(extra))
+
+        today = dt.date.today().isoformat()
+        value_now = ledger.cash + sum(ledger.holdings[c] * prices[c] for c in codes)
+        peak = max(float(state.get("peak_value", 0)), value_now)
+        drawdown = 1 - value_now / peak if peak else 0.0
+        state["peak_value"] = round(peak, 2)
+
+        # 护栏：盘中拿到的 K 线可能已含今天这根，去掉后再接上实时价
+        trend_hist = [p for d, p in closes.get(g["trend_code"], []) if d < today] + [prices[g["trend_code"]]]
+        targets, guard_notes, guard_info = guards.apply_guards(targets, prev_targets, trend_hist, drawdown, g)
+        record["notes"] += guard_notes
+        record["guards"] = guard_info
+        record["targets"] = targets
+
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
             max_daily_value=cfg["max_daily_value_usd"], account_cash=account_cash)
-
-        peak = max(float(state.get("peak_value", 0)), plan.managed_value)
-        drawdown = 1 - plan.managed_value / peak if peak else 0.0
-        state["peak_value"] = round(peak, 2)
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
@@ -185,14 +247,15 @@ def main(argv=None):
             record["notes"].append(f"提醒：已从高点回撤 {drawdown:.1%}，超过提醒线 {cfg['alert_drawdown']:.0%}（程序不会因此卖出）")
 
         actual = broker.positions()
-        for c in codes:
+        for c in codes if mode_ledger == "orders" else []:
             if actual.get(c, 0.0) + 1e-9 < ledger.holdings[c]:
                 record["notes"].append(f"警告：{c} 实际持仓 {actual.get(c, 0)} 少于程序记录 {ledger.holdings[c]}，本次不下单")
                 plan.orders = []
 
-        today = dt.date.today().isoformat()
         pending = [o for o in ours if o.get("order_status") in OPEN_ORDER_STATUSES]
-        traded_today = [o for o in ours if str(o.get("create_time", "")).startswith(today)]
+        # 当天只卖不买的情况（卖单没及时成交、买单留到下次）允许当天再跑一次把买单补上
+        traded_today = [o for o in ours if str(o.get("create_time", "")).startswith(today)
+                        and o.get("trd_side") == "BUY"]
         applied = False
         if mode == "execute":
             state_now = broker.market_state()
@@ -203,20 +266,39 @@ def main(argv=None):
             elif pending:
                 record["notes"].append(f"还有 {len(pending)} 笔未完成订单，本次不再下单")
             elif traded_today:
-                record["notes"].append("今天已经下过单，本次不再下单")
+                record["notes"].append("今天已经买过，本次不再下单")
             elif not market_open:
                 record["notes"].append(f"现在不在美股常规交易时段（市场状态 {state_now}），本次不下单")
             else:
-                for o in plan.orders:
+                # 先卖后买：卖单成交、钱回到账户后再下买单，避免实盘买单因资金不足被拒
+                sells = [o for o in plan.orders if o.side == "SELL"]
+                buys = [o for o in plan.orders if o.side == "BUY"]
+                sell_ids = []
+                for o in sells:
                     oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
+                    sell_ids.append(oid)
                     record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
                                              "qty": o.qty, "price": o.price})
+                timeout = float(cfg.get("sell_fill_timeout_sec", 90))
+                if buys and sell_ids and not wait_filled(broker, sell_ids, timeout):
+                    record["notes"].append(f"卖单 {timeout:.0f} 秒内没有全部成交，买单留到下一次运行")
+                else:
+                    for o in buys:
+                        oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
+                        record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
+                                                 "qty": o.qty, "price": o.price})
                 applied = True
             if applied and market_open:
                 # 只有真正在交易时段执行过，才把今天的目标记为"当前目标"，也才推进对照线
                 state["targets"] = targets
                 if sh_cfg.get("strategies"):
-                    values = update_shadows(state, sh_cfg, closes, prices, cfg["budget_usd"], today)
+                    # 一天可能运行好几次，对照账户每天只记一次
+                    if state.get("shadow_day") != today:
+                        state["shadow_values"] = update_shadows(state, sh_cfg, closes, prices,
+                                                                cfg["budget_usd"], today)
+                        state["shadow_day"] = today
+                        shadow_fresh = True
+                    values = state["shadow_values"]
                     record["strategies"] = values
                     record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
@@ -227,11 +309,13 @@ def main(argv=None):
         if use_signal:
             status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
-                                                 "strategies")}
+                                                 "strategies", "guards", "ledger_mode")}
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}
             status["rebalance_band"] = cfg["rebalance_band"]
+            status["guard_rules"] = {k: g[k] for k in ("enabled", "trend_code", "trend_days",
+                                                        "stock_max_below_trend", "drawdown_no_add", "stock_codes")}
             n = int(sig_cfg.get("history_days", 120))
             status["daily_closes"] = {c: v[-n:] for c, v in closes.items()}
             data_dir = ROOT / "data"
@@ -245,7 +329,7 @@ def main(argv=None):
 
     print(json.dumps(record, ensure_ascii=False, indent=2))
     write_log(log_dir, record)
-    if record.get("strategies"):
+    if record.get("strategies") and shadow_fresh:
         write_strategies(log_dir, record)
 
     if sync:

@@ -15,6 +15,10 @@ class FakeBroker:
     state = "MORNING"
     placed = []
     orders = []
+    closes = None
+    held = {}
+    cash = 1_000_000.0
+    fill = "FILLED_ALL"
 
     env = None
 
@@ -30,13 +34,18 @@ class FakeBroker:
         return {c: table[c] for c in codes}
 
     def daily_closes(self, codes, days):
+        if FakeBroker.closes:
+            return {c: FakeBroker.closes.get(c, [["2026-10-02", 1.0]]) for c in codes}
         return {c: [["2026-10-02", 1.0]] for c in codes}
 
     def account_cash(self):
-        return 1_000_000.0
+        return FakeBroker.cash
 
     def positions(self):
-        return {}
+        return dict(FakeBroker.held)
+
+    def order_status(self, ids):
+        return {i: FakeBroker.fill for i in ids}
 
     def market_state(self):
         return FakeBroker.state
@@ -57,6 +66,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "ROOT", root)
     monkeypatch.setattr(m, "MoomooBroker", FakeBroker)
     FakeBroker.placed, FakeBroker.orders, FakeBroker.state, FakeBroker.env = [], [], "MORNING", None
+    FakeBroker.closes, FakeBroker.held, FakeBroker.cash, FakeBroker.fill = None, {}, 1_000_000.0, "FILLED_ALL"
     return root
 
 
@@ -187,3 +197,94 @@ def test_update_shadows_tracks_and_rebalances():
     a = state["shadows"]["fixed_60_40"]
     assert abs(a["stock"] * 26.0 / (a["stock"] * 26.0 + a["bond"] * 20.0) - 0.6) < 1e-9
     assert v["trend_100"] == 4000.0
+
+
+def history(price_from, price_to, n=230):
+    """n 个交易日、从 price_from 线性走到 price_to 的日 K 线（都早于今天）。"""
+    start = dt.date.today() - dt.timedelta(days=n + 5)
+    return [[(start + dt.timedelta(days=i)).isoformat(), price_from + (price_to - price_from) * i / (n - 1)]
+            for i in range(n)]
+
+
+def test_trend_guard_caps_stocks_when_below_average(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}  # 现价 25 远低于均线
+    enable_signal(sandbox, {"US.SCHB": 0.65, "US.SCHF": 0.05, "US.SCHZ": 0.30})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["guards"]["stock_cap"] == 0.40 and log["guards"]["trend"]["below"]
+    assert abs(log["targets"]["US.SCHB"] + log["targets"]["US.SCHF"] - 0.40) < 1e-6
+    assert any("趋势护栏" in n for n in log["notes"])
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["guards"]["stock_cap"] == 0.40 and status["guard_rules"]["stock_max_below_trend"] == 0.40
+    assert abs(status["current_targets"]["US.SCHB"] + status["current_targets"]["US.SCHF"] - 0.40) < 1e-6
+
+
+def test_trend_guard_quiet_above_average(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["targets"]["US.SCHB"] == 0.60 and log["guards"]["stock_cap"] == 1.0
+
+
+def held_orders(schb, schz):
+    return [{"order_id": "a", "code": "US.SCHB", "trd_side": "BUY", "dealt_qty": schb, "dealt_avg_price": 25.0,
+             "remark": "autoinvest-v1", "order_status": "FILLED_ALL", "create_time": "2026-09-01 10:30:00"},
+            {"order_id": "b", "code": "US.SCHZ", "trd_side": "BUY", "dealt_qty": schz, "dealt_avg_price": 23.0,
+             "remark": "autoinvest-v1", "order_status": "FILLED_ALL", "create_time": "2026-09-01 10:30:00"}]
+
+
+def test_sells_fill_before_buys(sandbox):
+    FakeBroker.orders = held_orders(70, 10)  # 股票太多，要先卖 SCHB 再买 SCHZ
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL", "BUY"]
+
+
+def test_buys_wait_when_sells_not_filled(sandbox):
+    FakeBroker.orders = held_orders(70, 10)
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+    FakeBroker.fill = "SUBMITTED"
+    edit_config(sandbox, "sell_fill_timeout_sec: 90", "sell_fill_timeout_sec: 0")
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
+    assert any("买单留到下一次" in n for n in last_log(sandbox)["notes"])
+
+
+def test_sell_only_day_allows_a_later_run_to_buy(sandbox):
+    today = dt.date.today().isoformat()
+    FakeBroker.orders = held_orders(47, 0) + [
+        {"order_id": "s", "code": "US.SCHB", "trd_side": "SELL", "dealt_qty": 0, "dealt_avg_price": 0,
+         "remark": "autoinvest-v1", "order_status": "FILLED_ALL", "create_time": f"{today} 10:30:00"}]
+    FakeBroker.held = {"US.SCHB": 47}
+    run(sandbox, "--execute")
+    assert [(c, s) for c, s, *_ in FakeBroker.placed] == [("US.SCHZ", "BUY")]
+
+
+def test_remote_halt_stops_trading(sandbox):
+    (sandbox / "signals").mkdir()
+    (sandbox / "signals" / "HALT").touch()
+    run(sandbox, "--execute")
+    assert FakeBroker.placed == []
+    assert any("远程急停" in n for n in last_log(sandbox)["notes"])
+
+
+def test_real_account_ledger_counts_dividend_cash(sandbox):
+    edit_config(sandbox, "trd_env: SIMULATE", "trd_env: REAL")
+    edit_config(sandbox, "real_money_confirmed: false", "real_money_confirmed: true")
+    FakeBroker.held = {"US.SCHB": 48, "US.SCHZ": 34}   # 1200 + 782
+    FakeBroker.cash = 118.0                            # 含分红
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["ledger_mode"] == "account"
+    assert log["managed_value"] == 48 * 25 + 34 * 23 + 118
+    assert FakeBroker.placed == []  # 偏离不到 5 个百分点
+
+
+def test_shadows_logged_once_per_day(sandbox):
+    run(sandbox, "--execute")
+    FakeBroker.placed = []
+    FakeBroker.orders = held_orders(47, 34)
+    run(sandbox, "--execute")
+    lines = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 2
+    assert last_log(sandbox)["benchmark_value"] == 2000.0
