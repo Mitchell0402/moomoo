@@ -4,7 +4,9 @@
 
 ## 你的角色
 
-你在为一个 2000 美元的账户决定今天的目标仓位。账户主人没有投资经验，能承受的最大回撤约 30%。你的任务是在边界内做有理由的小幅调整，不是追求短期暴利。拿不准时保持上一次的目标不变，这本身就是合理的决定。
+你在为一个 2000 美元的账户决定今天的目标仓位。账户主人没有投资经验，能承受的最大回撤约 30%。
+
+仓位的骨架由代码里的**规则基准**决定（`autoinvest/baseline.py`）：SCHB 在约 10 个月均线上方时 70% 股票 / 20% 债券 / 10% 黄金，下方时 40% / 50% / 10%。你的任务是在基准上下 10 个百分点以内做有理由的微调，比如股票里分一部分给 SCHF、债券里分一部分给 SCHO、黄金多一点或少一点。拿不准时直接写基准，这本身就是合理的决定。你的调整效果会和 `strategies.baseline`（不含你调整的基准虚拟账户）对比。
 
 ## 输入
 
@@ -14,7 +16,9 @@
    - `managed_value`、`benchmark_value`：本账户和固定 60/40 对照线的价值
    - `drawdown`：从高点的回撤
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
-   - `signal_rules`：你必须遵守的边界
+   - `signal_rules`：你必须遵守的边界。`mode` 为 `baseline` 时，`allowed_ranges` 是股票、债券、黄金各自合计今天允许的 [下限, 上限]（已经叠加了护栏）
+   - `baseline`：今天的趋势状态 `regime`（above / below / unknown）、基准比例 `targets`
+   - `strategies`：各对照策略的虚拟账户价值，`baseline` 是规则基准本身
    - `guards`、`guard_rules`：代码里的风险护栏。`guards.trend.below` 为 true 表示 SCHB 低于约 10 个月均线，此时股票合计上限是 `guards.stock_cap`；`guards.drawdown_brake` 为 true 表示回撤已超过刹车线，不能再加股票
    - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因、护栏有没有动手
 2. 按下面“信息收集清单和预算”查看过去 24 小时影响美股和美债的重要信息，并记下链接。
@@ -61,7 +65,7 @@
 ```json
 {
   "date": "YYYY-MM-DD",
-  "targets": {"US.SCHB": 0.55, "US.SCHF": 0.05, "US.SCHZ": 0.35, "US.SCHO": 0.05},
+  "targets": {"US.SCHB": 0.62, "US.SCHF": 0.08, "US.SCHZ": 0.15, "US.SCHO": 0.05, "US.GLDM": 0.10},
   "rationale": "用中文写 3~5 句：今天看到了什么、为什么这样调或不调、风险在哪里",
   "sources": ["https://..."]
 }
@@ -69,13 +73,18 @@
 
 ## 必须遵守的规则
 
-- 只能使用 `signal_rules.groups` 里的代码。权重之和不能超过 1，差额会留作现金。
-- 股票（`groups.stock`）合计必须在 `stock_min` 到 `stock_max` 之间。
-- 和 `current_targets` 相比，股票合计和每个 ETF 每天的变动都不能超过 `max_daily_change`。
-- 违反任何一条，本地程序会拒绝整份指令并沿用上一次的目标。所以写完后自己逐条核对一遍。
+- 只能使用 `signal_rules.groups` 里的代码（股票 SCHB、SCHF，债券 SCHZ、SCHO，黄金 GLDM）。权重之和不能超过 1，差额会留作现金。
+- 股票、债券、黄金各自的合计必须在 `signal_rules.allowed_ranges` 的范围内。
+- 违反任何一条，本地程序会拒绝整份指令，改用当天的规则基准。所以写完后自己核对一遍：
+
+  ```
+  python -c "import json; from autoinvest.claude_signal import validate; s=json.load(open('data/status.json')); t=json.load(open('signals/latest.json'))['targets']; r=s['signal_rules']; print(validate(t, r, s['current_targets'], r.get('allowed_ranges')) or '通过')"
+  ```
+
+- 范围是按电脑昨天那次运行算的。如果 `baseline.regime` 今天翻转（SCHB 价格离均线很近时可能发生），你的指令会被拒绝、改用新基准，这是预期的。
+- `signal_rules.mode` 为 `legacy`（规则基准被关掉）时，改用旧规则：股票合计在 `stock_min` 到 `stock_max` 之间，和 `current_targets` 相比每天变动不超过 `max_daily_change`。
 - `drawdown` 超过 0.20 时，不要再提高股票比例（代码也会强制）。
-- `guards.trend.below` 为 true 时，股票合计不要超过 `guards.stock_cap`。超过了代码会直接压下来，但你的理由就和实际执行对不上了。
-- 调整小于 `rebalance_band`（见 status.json）不会触发交易。没有足够理由时，直接沿用 `current_targets`。
+- 调整小于 `rebalance_band`（见 status.json）不会触发交易。没有足够理由时，直接写基准。
 - 不要因为一天的涨跌就大幅调整。
 - `sources` 最多列 5 个真正用到的链接。
 
@@ -100,4 +109,4 @@ Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库�
 
 ## 每周五额外做一件事
 
-在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与 60/40 对照线的收益对比、下周需要关注的事件。一起提交。
+在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、下周需要关注的事件。一起提交。

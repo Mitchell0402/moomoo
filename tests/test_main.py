@@ -30,7 +30,7 @@ class FakeBroker:
         return list(FakeBroker.orders)
 
     def prices(self, codes):
-        table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0}
+        table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0}
         return {c: table[c] for c in codes}
 
     def daily_closes(self, codes, days):
@@ -206,9 +206,14 @@ def history(price_from, price_to, n=230):
             for i in range(n)]
 
 
+def legacy_mode(root):
+    edit_config(root, "  enabled: true          # 规则基准", "  enabled: false         # 规则基准")
+
+
 def test_trend_guard_caps_stocks_when_below_average(sandbox):
+    legacy_mode(sandbox)  # 旧模式里 Claude 能写到 65%，护栏要把它压到 40%
     FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}  # 现价 25 远低于均线
-    enable_signal(sandbox, {"US.SCHB": 0.65, "US.SCHF": 0.05, "US.SCHZ": 0.30})
+    enable_signal(sandbox, {"US.SCHB": 0.55, "US.SCHF": 0.05, "US.SCHZ": 0.40})
     run(sandbox, "--execute")
     log = last_log(sandbox)
     assert log["guards"]["stock_cap"] == 0.40 and log["guards"]["trend"]["below"]
@@ -220,10 +225,84 @@ def test_trend_guard_caps_stocks_when_below_average(sandbox):
 
 
 def test_trend_guard_quiet_above_average(sandbox):
+    legacy_mode(sandbox)
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
     run(sandbox, "--execute")
     log = last_log(sandbox)
     assert log["targets"]["US.SCHB"] == 0.60 and log["guards"]["stock_cap"] == 1.0
+
+
+def test_baseline_above_trend_buys_70_20_10(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["baseline"]["regime"] == "above"
+    assert {c: w for c, w in log["targets"].items() if w} == {"US.SCHB": 0.70, "US.SCHZ": 0.20, "US.GLDM": 0.10}
+    assert {c for c, *_ in FakeBroker.placed} == {"US.SCHB", "US.SCHZ", "US.GLDM"}
+
+
+def test_baseline_below_trend_is_40_50_10(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["baseline"]["regime"] == "below"
+    assert {c: w for c, w in log["targets"].items() if w} == {"US.SCHB": 0.40, "US.SCHZ": 0.50, "US.GLDM": 0.10}
+    assert not any("趋势护栏" in n for n in log["notes"])  # 基准本身已经在护栏以内
+
+
+def test_claude_tilt_within_band_is_used_without_daily_limit(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    # 上一次是 60/40，今天直接写 80%：基准 70 ±10 以内，不受旧的每天 10 个百分点限制
+    enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHF": 0.10, "US.SCHZ": 0.10, "US.GLDM": 0.10})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["signal"] and log["targets"]["US.SCHF"] == 0.10
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["signal_rules"]["mode"] == "baseline"
+    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.6, 0.8]
+    assert status["signal_rules"]["groups"]["gold"] == ["US.GLDM"]
+    assert status["baseline"]["targets"]["US.GLDM"] == 0.10
+
+
+def test_claude_outside_band_falls_back_to_baseline(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}  # 均线下方，股票只能 30–40%
+    enable_signal(sandbox, {"US.SCHB": 0.60, "US.SCHZ": 0.30, "US.GLDM": 0.10})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert "signal" not in log
+    assert any("被拒绝" in n and "规则基准" in n for n in log["notes"])
+    assert log["targets"]["US.SCHB"] == 0.40 and log["targets"]["US.SCHZ"] == 0.50
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.3, 0.4]
+
+
+def test_old_config_without_baseline_section_gets_defaults(sandbox):
+    cfg = sandbox / "config.yaml"
+    text = cfg.read_text(encoding="utf-8")
+    start, end = text.index("# ---- 规则基准"), text.index("# ---- 风险护栏")
+    cfg.write_text(text[:start] + text[end:].replace("    gold:\n      - US.GLDM", ""), encoding="utf-8")
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHZ": 0.20, "US.GLDM": 0.10})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["signal"] and log["baseline"]["regime"] == "above"
+
+
+def test_baseline_shadow_is_logged(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    run(sandbox, "--execute")
+    header = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()[0]
+    assert header.endswith(",baseline")
+
+
+def test_strategies_csv_rolls_over_when_columns_change(sandbox):
+    logs = sandbox / "logs"
+    logs.mkdir()
+    (logs / "strategies.csv").write_text("time,actual,fixed_100\nx,1,2\n", encoding="utf-8")
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    run(sandbox, "--execute")
+    assert len(list(logs.glob("strategies-until-*.csv"))) == 1
+    assert (logs / "strategies.csv").read_text(encoding="utf-8").splitlines()[0].endswith(",baseline")
 
 
 def held_orders(schb, schz):

@@ -5,8 +5,13 @@
      "targets": {"US.SCHB": 0.50, "US.SCHF": 0.10, "US.SCHZ": 0.30, "US.SCHO": 0.10},
      "rationale": "为什么这样调"}
 
-权重之和可以小于 1，差额留作现金。任何一条不符合 config.yaml 里的 signal 边界，整份指令作废，
-继续沿用上一次接受的目标。
+权重之和可以小于 1，差额留作现金。任何一条不符合边界，整份指令作废。
+
+两种边界：
+- 规则基准模式（默认，见 baseline.py）：股票、债券、黄金各自的合计只能在今天基准的上下 band 以内；
+  指令作废时用今天的基准。
+- 旧模式（没有基准）：股票合计在 stock_min–stock_max 之间，每天变动不超过 max_daily_change；
+  指令作废时沿用上一次接受的目标。
 """
 from __future__ import annotations
 
@@ -38,8 +43,8 @@ def load_signal(path: Path, today: dt.date, max_age_days: int) -> tuple[dict | N
     return sig, ""
 
 
-def validate(targets: dict, sig_cfg: dict, prev: dict) -> list[str]:
-    """返回所有不合规的原因；空列表表示通过。"""
+def validate(targets: dict, sig_cfg: dict, prev: dict, allowed_ranges: dict | None = None) -> list[str]:
+    """返回所有不合规的原因；空列表表示通过。allowed_ranges 是基准模式下每类资产的 [下限, 上限]。"""
     errors = []
     allowed = whitelist(sig_cfg)
     for c, w in targets.items():
@@ -52,6 +57,13 @@ def validate(targets: dict, sig_cfg: dict, prev: dict) -> list[str]:
     total = sum(targets.values())
     if total > 1 + 1e-9:
         errors.append(f"权重合计 {total:.2f} 超过 1")
+    if allowed_ranges is not None:
+        names = {"stock": "股票", "bond": "债券", "gold": "黄金"}
+        for group, (lo, hi) in allowed_ranges.items():
+            w = sum(targets.get(c, 0) for c in sig_cfg["groups"].get(group, []))
+            if not lo - 1e-9 <= w <= hi + 1e-9:
+                errors.append(f"{names.get(group, group)}合计 {w:.0%} 不在今天基准允许的 {lo:.0%}–{hi:.0%} 之间")
+        return errors
     stock = sum(targets.get(c, 0) for c in sig_cfg["groups"]["stock"])
     lo, hi = sig_cfg["stock_min"], sig_cfg["stock_max"]
     if not lo - 1e-9 <= stock <= hi + 1e-9:
@@ -67,13 +79,16 @@ def validate(targets: dict, sig_cfg: dict, prev: dict) -> list[str]:
     return errors
 
 
-def resolve_targets(path: Path, today: dt.date, sig_cfg: dict, prev: dict) -> tuple[dict, list[str], dict | None]:
-    """返回 (今天使用的目标, 备注, 被接受的指令或 None)。所有白名单代码都会出现在目标里，没写的为 0。"""
+def resolve_targets(path: Path, today: dt.date, sig_cfg: dict, prev: dict, base: dict | None = None,
+                    allowed_ranges: dict | None = None) -> tuple[dict, list[str], dict | None]:
+    """返回 (今天使用的目标, 备注, 被接受的指令或 None)。所有白名单代码都会出现在目标里，没写的为 0。
+    给了 base（今天的规则基准）时，指令不能用就用基准；否则沿用上一次的目标。"""
     full = lambda t: {c: float(t.get(c, 0)) for c in whitelist(sig_cfg)}
+    fallback, what = (base, "今天的规则基准") if base is not None else (prev, "上一次的目标")
     sig, why = load_signal(path, today, sig_cfg["max_age_days"])
     if sig is None:
-        return full(prev), [f"{why}，沿用上一次的目标"], None
-    errors = validate(sig["targets"], sig_cfg, prev)
+        return full(fallback), [f"{why}，用{what}"], None
+    errors = validate(sig["targets"], sig_cfg, prev, allowed_ranges)
     if errors:
-        return full(prev), ["Claude 的指令被拒绝：" + "；".join(errors) + "。沿用上一次的目标"], None
+        return full(fallback), ["Claude 的指令被拒绝：" + "；".join(errors) + f"。用{what}"], None
     return full(sig["targets"]), [f"采用 Claude {sig['date']} 的指令"], sig
