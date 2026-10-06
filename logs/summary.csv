@@ -4,3 +4,6 @@ time,mode,managed_value,benchmark_value,drawdown,max_drift,orders,note
 2026-10-05T05:05:37,dry-run,2000.0,,0.0,0.6,0,
 2026-10-05T05:18:34,dry-run,2000.0,,0.0,0.6,0,没有找到 Claude 的指令文件，沿用上一次的目标
 2026-10-05T10:30:00,execute,2000.0,2000.0,0.0,0.6,2,没有找到 Claude 的指令文件，沿用上一次的目标
+2026-10-06T17:48:13,status,,,,,0,采用 Claude 2026-10-06 的指令 | 错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
+2026-10-06T18:04:20,status,2010.93,,0.0,0.08,0,采用 Claude 2026-10-06 的指令
+2026-10-06T18:09:14,dry-run,2010.93,,0.0,0.1838,0,Claude 的指令被拒绝：债券合计 40% 不在今天基准允许的 10%–30% 之间。用今天的规则基准
