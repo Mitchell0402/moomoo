@@ -64,22 +64,25 @@ def write_log(log_dir: Path, record: dict):
 
 
 def write_strategies(log_dir: Path, record: dict):
-    """每次真正执行后记一行：实际账户（Claude 或固定目标）和每个对照策略的虚拟账户价值。"""
+    """每天一行：实际账户（Claude 或固定目标）和每个对照策略的虚拟账户价值。
+    同一天跑好几次时用最后一次覆盖当天那行，所以收盘后那次运行跑过的话，记的就是收盘价。"""
     path = log_dir / "strategies.csv"
     names = list(record["strategies"])
     header = ",".join(["time", "actual"] + names)
+    lines = []
     if path.exists():
-        with path.open(encoding="utf-8") as f:
-            old_header = f.readline().strip()
-        if old_header != header:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        if not lines or lines[0].strip() != header:
             # 对照策略的列变了（比如新加了 baseline），旧文件改名保存，新开一个
             path.rename(log_dir / f"strategies-until-{record['time'][:10]}.csv")
-    new = not path.exists()
-    with path.open("a", encoding="utf-8") as f:
-        if new:
-            f.write(header + "\n")
-        f.write(",".join([record["time"], str(record.get("managed_value", ""))]
-                         + [str(record["strategies"][n]) for n in names]) + "\n")
+            lines = []
+    if not lines:
+        lines = [header]
+    elif len(lines) > 1 and lines[-1].startswith(record["time"][:10]):
+        lines.pop()
+    lines.append(",".join([record["time"], str(record.get("managed_value", ""))]
+                          + [str(record["strategies"][n]) for n in names]))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def update_shadows(state: dict, sh_cfg: dict, closes: dict, prices: dict, budget: float, today: str) -> dict:
@@ -119,6 +122,22 @@ def update_baseline_shadow(state: dict, base: dict, prices: dict, budget: float,
         acct["cash"] = value * (1 - sum(base.values()))
     book["baseline"] = acct
     return round(value, 2)
+
+
+def value_shadows(state: dict, sh_cfg: dict, prices: dict, kinds: list) -> dict:
+    """按现在的价格给对照账户估值，不调仓。收盘后那次运行用的是收盘价，和实际账户在同一时点比较。"""
+    book = state.get("shadows") or {}
+    values = {}
+    for kind in kinds:
+        acct = book.get(kind)
+        if acct is None:
+            continue
+        if "units" in acct:
+            value = acct["cash"] + sum(q * prices[c] for c, q in acct["units"].items())
+        else:
+            value = acct["stock"] * prices[sh_cfg["stock"]] + acct["bond"] * prices[sh_cfg["bond"]]
+        values[kind] = round(value, 2)
+    return values
 
 
 def ledger_mode(cfg: dict) -> str:
@@ -211,7 +230,6 @@ def main(argv=None):
     prev_targets = state.get("targets") or bench_targets
     targets = {c: float(bench_targets.get(c, 0.0)) for c in codes}
     record["targets"] = targets
-    shadow_fresh = False
 
     remark = cfg.get("remark", "autoinvest-v1")
     broker = None
@@ -339,19 +357,19 @@ def main(argv=None):
             if applied and market_open:
                 # 只有真正在交易时段执行过，才把今天的目标记为"当前目标"，也才推进对照线
                 state["targets"] = targets
-                if sh_cfg.get("strategies"):
-                    # 一天可能运行好几次，对照账户每天只记一次
-                    if state.get("shadow_day") != today:
-                        state["shadow_values"] = update_shadows(state, sh_cfg, closes, prices,
-                                                                cfg["budget_usd"], today)
-                        if base is not None:
-                            state["shadow_values"]["baseline"] = update_baseline_shadow(
-                                state, base, prices, cfg["budget_usd"], sh_cfg.get("band", 0.05), today)
-                        state["shadow_day"] = today
-                        shadow_fresh = True
-                    values = state["shadow_values"]
-                    record["strategies"] = values
-                    record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
+                # 一天可能运行好几次，对照账户每天只在第一次调仓
+                if sh_cfg.get("strategies") and state.get("shadow_day") != today:
+                    update_shadows(state, sh_cfg, closes, prices, cfg["budget_usd"], today)
+                    if base is not None:
+                        update_baseline_shadow(state, base, prices, cfg["budget_usd"],
+                                               sh_cfg.get("band", 0.05), today)
+                    state["shadow_day"] = today
+            if sh_cfg.get("strategies") and state.get("shadows"):
+                # 每次运行都按现价重新估值（不调仓），收盘后那次就是收盘价
+                kinds = list(sh_cfg["strategies"]) + (["baseline"] if base is not None else [])
+                values = value_shadows(state, sh_cfg, prices, kinds)
+                record["strategies"] = values
+                record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
             record["planned_orders"] = [{"code": o.code, "side": o.side, "qty": o.qty, "price": o.price}
                                         for o in plan.orders]
@@ -384,7 +402,7 @@ def main(argv=None):
 
     print(json.dumps(record, ensure_ascii=False, indent=2))
     write_log(log_dir, record)
-    if record.get("strategies") and shadow_fresh:
+    if record.get("strategies") and mode == "execute":
         write_strategies(log_dir, record)
 
     if sync:

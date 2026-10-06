@@ -19,6 +19,7 @@ class FakeBroker:
     held = {}
     cash = 1_000_000.0
     fill = "FILLED_ALL"
+    price_override = {}
 
     env = None
 
@@ -31,6 +32,7 @@ class FakeBroker:
 
     def prices(self, codes):
         table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0}
+        table.update(FakeBroker.price_override)
         return {c: table[c] for c in codes}
 
     def daily_closes(self, codes, days):
@@ -67,6 +69,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "MoomooBroker", FakeBroker)
     FakeBroker.placed, FakeBroker.orders, FakeBroker.state, FakeBroker.env = [], [], "MORNING", None
     FakeBroker.closes, FakeBroker.held, FakeBroker.cash, FakeBroker.fill = None, {}, 1_000_000.0, "FILLED_ALL"
+    FakeBroker.price_override = {}
     return root
 
 
@@ -367,3 +370,24 @@ def test_shadows_logged_once_per_day(sandbox):
     lines = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()
     assert len(lines) == 2
     assert last_log(sandbox)["benchmark_value"] == 2000.0
+
+
+def test_after_close_run_values_shadows_at_close(sandbox):
+    run(sandbox, "--execute")
+    state = json.loads((sandbox / "state.json").read_text(encoding="utf-8"))
+    before = state["shadows"]["fixed_60_40"]
+    FakeBroker.placed = []
+    FakeBroker.orders = held_orders(47, 34)
+    FakeBroker.state = "CLOSED"
+    FakeBroker.price_override = {"US.SCHB": 27.5}  # 收盘时股票涨了 10%
+    run(sandbox, "--execute")
+    assert FakeBroker.placed == []
+    state = json.loads((sandbox / "state.json").read_text(encoding="utf-8"))
+    assert state["shadows"]["fixed_60_40"] == before  # 收盘后只估值，不调仓
+    expected = round(before["stock"] * 27.5 + before["bond"] * 23.0, 2)
+    log = last_log(sandbox)
+    assert log["benchmark_value"] == expected and log["strategies"]["fixed_60_40"] == expected
+    lines = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 2  # 当天那行被收盘后的估值覆盖
+    names = lines[0].split(",")
+    assert float(lines[1].split(",")[names.index("fixed_60_40")]) == expected
