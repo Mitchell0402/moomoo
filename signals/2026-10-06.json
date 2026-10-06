@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-06",
+  "targets": {
+    "US.SCHB": 0.6,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.32,
+    "US.SCHO": 0.08
+  },
+  "rationale": "股票维持 60% 不变：周一标普 500 涨 0.66%、盘前期货小涨，VIX 约 15，SCHB 在 50 日均线上方，趋势没有变坏。债券里把 8% 从综合债 SCHZ 挪到短期国债 SCHO：10 年期美债收益率升到约 5.3%，是 2002 年以来最高，近一个月 SCHZ 跌了约 2.5%；ISM 服务业价格指数创 4 年新高，市场还在担心年内加息，长一点的债券继续受压的风险更大，短债波动小、利息也不低。9 月非农只增加 2.9 万、失业率 4.2%，经济在放缓，所以不加股票。下周三（10 月 14 日）公布 CPI，是接下来最大的风险点。档位：加查（美债收益率创 24 年新高），搜索 11 次，打开网页 5 篇。",
+  "sources": [
+    "https://www.bls.gov/news.release/archives/empsit_10022026.htm",
+    "https://tradingeconomics.com/united-states/government-bond-yield",
+    "https://tradingeconomics.com/united-states/stock-market",
+    "https://www.bls.gov/schedule/2026/10_sched_list.htm"
+  ]
+}
