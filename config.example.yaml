@@ -73,6 +73,8 @@ shadows:
   band: 0.05             # 偏离目标超过 5 个百分点才调仓
   history_days: 300      # 计算均线、动量、波动率用的日 K 线天数
   benchmark: fixed_60_40 # 日志里 benchmark_value 用哪个策略
+  intraday: true         # 日内对照：每天开盘买 SCHB、收盘全卖，晚上拿现金（没有这一行也默认打开）
+  intraday_cost: 0.0005  # 日内对照每次来回的成本估计（买卖价差加滑点，0.05%）
   strategies:
     - fixed_100          # 100% 股票
     - fixed_80_20
