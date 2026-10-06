@@ -1,8 +1,8 @@
 {
- "time": "2026-10-06T18:22:05",
+ "time": "2026-10-06T18:35:42",
  "trd_env": "SIMULATE",
  "managed_value": 2010.93,
- "benchmark_value": null,
+ "benchmark_value": 2011.23,
  "drawdown": 0.0,
  "holdings": {
   "US.SCHB": 39.0,
@@ -26,10 +26,22 @@
   "US.GLDM": 0.1
  },
  "notes": [
-  "Claude 的指令被拒绝：债券合计 40% 不在今天基准允许的 10%–30% 之间。用今天的规则基准"
+  "Claude 的指令被拒绝：债券合计 40% 不在今天基准允许的 10%–30% 之间。用今天的规则基准",
+  "现在不在美股常规交易时段（市场状态 AFTER_HOURS_BEGIN），本次不下单"
  ],
  "orders": [],
- "strategies": null,
+ "strategies": {
+  "fixed_100": 2015.98,
+  "fixed_80_20": 2013.6,
+  "fixed_60_40": 2011.23,
+  "fixed_50_50": 2010.04,
+  "trend_100": 2015.98,
+  "trend_80_30": 2013.6,
+  "dual_momentum": 2015.98,
+  "vol_target": 2013.55,
+  "risk_parity": 2007.06,
+  "intraday": 2001.0
+ },
  "guards": {
   "trend": {
    "price": 29.97,
