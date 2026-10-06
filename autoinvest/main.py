@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
-from . import guards
+from . import baseline, guards
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .strategy import Ledger, build_ledger, plan_rebalance
@@ -67,10 +67,17 @@ def write_strategies(log_dir: Path, record: dict):
     """每次真正执行后记一行：实际账户（Claude 或固定目标）和每个对照策略的虚拟账户价值。"""
     path = log_dir / "strategies.csv"
     names = list(record["strategies"])
+    header = ",".join(["time", "actual"] + names)
+    if path.exists():
+        with path.open(encoding="utf-8") as f:
+            old_header = f.readline().strip()
+        if old_header != header:
+            # 对照策略的列变了（比如新加了 baseline），旧文件改名保存，新开一个
+            path.rename(log_dir / f"strategies-until-{record['time'][:10]}.csv")
     new = not path.exists()
     with path.open("a", encoding="utf-8") as f:
         if new:
-            f.write(",".join(["time", "actual"] + names) + "\n")
+            f.write(header + "\n")
         f.write(",".join([record["time"], str(record.get("managed_value", ""))]
                          + [str(record["strategies"][n]) for n in names]) + "\n")
 
@@ -95,6 +102,23 @@ def update_shadows(state: dict, sh_cfg: dict, closes: dict, prices: dict, budget
         book[kind] = acct
         values[kind] = round(value, 2)
     return values
+
+
+def update_baseline_shadow(state: dict, base: dict, prices: dict, budget: float, band: float, today: str) -> float:
+    """规则基准的虚拟账户（不含 Claude 的调整），用来单独衡量 Claude 的调整帮了多少。"""
+    book = state.setdefault("shadows", {})
+    acct = book.get("baseline")
+    if acct is None:
+        acct = {"start": today, "cash": 0.0,
+                "units": {c: budget * w / prices[c] for c, w in base.items() if w > 0}}
+    value = acct["cash"] + sum(q * prices[c] for c, q in acct["units"].items())
+    drift = max(abs(acct["units"].get(c, 0.0) * prices[c] / value - base.get(c, 0.0))
+                for c in set(base) | set(acct["units"]))
+    if drift > band:
+        acct["units"] = {c: value * w / prices[c] for c, w in base.items() if w > 0}
+        acct["cash"] = value * (1 - sum(base.values()))
+    book["baseline"] = acct
+    return round(value, 2)
 
 
 def ledger_mode(cfg: dict) -> str:
@@ -171,23 +195,21 @@ def main(argv=None):
 
     state = load_state(state_path)
     bench_targets = cfg["targets"]
-    if use_signal:
-        codes = list(dict.fromkeys(whitelist(sig_cfg) + list(bench_targets)))
-        prev = state.get("targets") or bench_targets
-        targets, sig_notes, accepted = resolve_targets(
-            ROOT / sig_cfg.get("path", "signals/latest.json"), dt.date.today(), sig_cfg, prev)
-        targets = {c: targets.get(c, 0.0) for c in codes}
-        record["notes"] += sig_notes
-        if accepted:
-            record["signal"] = {"date": accepted["date"], "rationale": accepted.get("rationale", "")}
-    else:
-        codes = list(bench_targets)
-        targets = dict(bench_targets)
     g = guards.settings(cfg)
-    if g["enabled"] and g["bond_code"] not in codes:
+    b = baseline.settings(cfg)
+    if use_signal and b["enabled"] and "gold" not in sig_cfg["groups"]:
+        # 老的 config.yaml 白名单里没有黄金，基准模式下自动加上
+        sig_cfg = {**sig_cfg, "groups": {**sig_cfg["groups"], "gold": list(b["gold_codes"])}}
+    codes = list(bench_targets)
+    if use_signal:
+        codes += whitelist(sig_cfg)
+    if b["enabled"]:
+        codes += baseline.codes(b)
+    if g["enabled"]:
         codes.append(g["bond_code"])
-        targets.setdefault(g["bond_code"], 0.0)
+    codes = list(dict.fromkeys(codes))
     prev_targets = state.get("targets") or bench_targets
+    targets = {c: float(bench_targets.get(c, 0.0)) for c in codes}
     record["targets"] = targets
     shadow_fresh = False
 
@@ -224,8 +246,34 @@ def main(argv=None):
         drawdown = 1 - value_now / peak if peak else 0.0
         state["peak_value"] = round(peak, 2)
 
-        # 护栏：盘中拿到的 K 线可能已含今天这根，去掉后再接上实时价
+        # 趋势：盘中拿到的 K 线可能已含今天这根，去掉后再接上实时价
         trend_hist = [p for d, p in closes.get(g["trend_code"], []) if d < today] + [prices[g["trend_code"]]]
+        trend = guards.trend_state(trend_hist, int(g["trend_days"]))
+
+        # 今天的规则基准，以及 Claude 能调整的范围
+        base, ranges = None, None
+        if b["enabled"]:
+            base, regime = baseline.targets_for(b, trend, bench_targets)
+            base = {c: float(base.get(c, 0.0)) for c in codes}
+            groups = sig_cfg["groups"] if use_signal else {"stock": g["stock_codes"], "bond": g["bond_codes"],
+                                                            "gold": b["gold_codes"]}
+            ranges = baseline.ranges(base, float(b["band"]), groups)
+            # 护栏压得更低时，Claude 的股票范围跟着降，免得合规的减仓指令被拒
+            cap = guards.stock_cap(trend, drawdown, prev_targets, g)
+            if "stock" in ranges:
+                ranges["stock"] = [min(ranges["stock"][0], cap), min(ranges["stock"][1], cap)]
+            record["baseline"] = {"regime": regime, "targets": base, "band": b["band"], "ranges": ranges}
+            targets = dict(base)
+
+        if use_signal:
+            sig_targets, sig_notes, accepted = resolve_targets(
+                ROOT / sig_cfg.get("path", "signals/latest.json"), dt.date.today(), sig_cfg, prev_targets,
+                base, ranges)
+            targets = {c: sig_targets.get(c, 0.0) for c in codes}
+            record["notes"] += sig_notes
+            if accepted:
+                record["signal"] = {"date": accepted["date"], "rationale": accepted.get("rationale", "")}
+
         targets, guard_notes, guard_info = guards.apply_guards(targets, prev_targets, trend_hist, drawdown, g)
         record["notes"] += guard_notes
         record["guards"] = guard_info
@@ -296,6 +344,9 @@ def main(argv=None):
                     if state.get("shadow_day") != today:
                         state["shadow_values"] = update_shadows(state, sh_cfg, closes, prices,
                                                                 cfg["budget_usd"], today)
+                        if base is not None:
+                            state["shadow_values"]["baseline"] = update_baseline_shadow(
+                                state, base, prices, cfg["budget_usd"], sh_cfg.get("band", 0.05), today)
                         state["shadow_day"] = today
                         shadow_fresh = True
                     values = state["shadow_values"]
@@ -309,10 +360,14 @@ def main(argv=None):
         if use_signal:
             status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
-                                                 "strategies", "guards", "ledger_mode")}
+                                                 "strategies", "guards", "ledger_mode", "baseline")}
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}
+            status["signal_rules"]["mode"] = "baseline" if record.get("baseline") else "legacy"
+            if record.get("baseline"):
+                # Claude 今天能用的范围：基准 ±band，已叠加护栏的股票上限
+                status["signal_rules"]["allowed_ranges"] = record["baseline"]["ranges"]
             status["rebalance_band"] = cfg["rebalance_band"]
             status["guard_rules"] = {k: g[k] for k in ("enabled", "trend_code", "trend_days",
                                                         "stock_max_below_trend", "drawdown_no_add", "stock_codes")}

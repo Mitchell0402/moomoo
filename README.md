@@ -1,6 +1,8 @@
 # moomoo 自动再平衡
 
-这个程序在 moomoo 里管理 2000 美元。默认按 60% 美股全市场 ETF（SCHB）+ 40% 美国债券 ETF（SCHZ）建仓，之后每个交易日检查一次。只要任一标的偏离目标超过 5 个百分点，就调回目标比例。打开“Claude 每日动态调整”后，目标比例改由 Claude 每天分析市场后决定（见下文）。
+这个程序在 moomoo 里管理 2000 美元。目标比例由**规则基准**决定：美股全市场 ETF（SCHB）在约 10 个月均线上方时 70% 股票 / 20% 债券（SCHZ）/ 10% 黄金（GLDM），下方时 40% / 50% / 10%。打开“Claude 每日动态调整”后，Claude 每天分析市场，在基准上下 10 个百分点以内微调（见下文）。每个交易日检查，只要任一标的偏离目标超过 5 个百分点，就调回目标比例。
+
+回测（1972 年起，月度数据）：规则基准年化约 10.8%、最大回撤约 17.7%；固定 60/40 是 9.6%、26.5%。Claude 在边界里一直最激进时最大回撤约 19.9%。
 
 默认连**模拟盘**。计划是先模拟两周（到 2026 年 10 月 19 日左右），确认没问题后再按文末“切换到实盘”的步骤改用真钱。
 
@@ -72,7 +74,9 @@ $s = (Get-ScheduledTask -TaskName moomoo-autoinvest).Settings; $s.StartWhenAvail
 1. 美东 8:07 左右，Claude 的定时任务读取仓库里的 `data/status.json`（持仓、价格走势）和当天新闻，写出今天的目标比例和理由，提交到 GitHub。
 2. 美东 10:30，本程序先 `git pull` 拿到指令，校验通过后按新目标调仓，再把最新的 `data/status.json` 和 `logs/summary.csv` 推回 GitHub。
 
-Claude 的权限由 `config.yaml` 的 `signal` 部分限制：只能用白名单里的 4 只 ETF，股票合计在 40%–75% 之间，每天最多变动 10 个百分点。指令不合规、过期或缺失时，程序沿用上一次的目标，并在日志里写明原因。通过校验的目标还要再过一遍上面的风险护栏，护栏会直接把股票比例压下来，不受每天 10 个百分点的限制。日志里的 `benchmark_value` 是同样 2000 美元按固定 60/40 运行的对照线，用来判断 Claude 的调整有没有帮上忙。Claude 的分析规则写在 `claude/daily-analysis.md`。
+Claude 的权限：只能用白名单里的 5 只 ETF（SCHB、SCHF、SCHZ、SCHO、GLDM），股票、债券、黄金各自的合计只能比当天的规则基准多或少 10 个百分点（`config.yaml` 的 `baseline.band`）。指令不合规、过期或缺失时，程序直接用当天的规则基准，并在日志里写明原因，所以 Claude 停了系统照样合理运转。通过校验的目标还要再过一遍上面的风险护栏。`logs/strategies.csv` 里的 `baseline` 列是不含 Claude 调整的规则基准虚拟账户，用来单独衡量 Claude 的调整帮了多少。
+
+老的 `config.yaml` 不用改：没有 `baseline` 这一段时按默认值启用，白名单里也会自动加上 GLDM。想回到旧模式（Claude 在 `stock_min`–`stock_max` 里自由调、每天最多变 10 个百分点），在 `config.yaml` 里加上 `baseline:` 和下一行的 `  enabled: false`。日志里的 `benchmark_value` 是同样 2000 美元按固定 60/40 运行的对照线，用来判断 Claude 的调整有没有帮上忙。Claude 的分析规则写在 `claude/daily-analysis.md`。
 
 打开方法：把 `config.yaml` 里 `signal` 下的 `enabled` 改成 `true`，然后告诉 Claude，Claude 会设好每天的分析任务。程序要在用 `git clone` 下载的这个文件夹里运行，才能和 GitHub 同步。
 
