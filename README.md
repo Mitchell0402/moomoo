@@ -41,12 +41,18 @@
 
 ## 每天自动运行
 
-推荐每个交易日美东时间 10:30、12:30、14:30 各运行一次。程序一天最多买一次，多跑不会重复下单，只是让电脑晚开机、OpenD 临时掉线或卖单没及时成交时，当天还有机会补上。下面的时间请换算成你电脑所在的时区。
+推荐每个交易日美东时间 10:30、12:30、14:30 各运行一次，收盘后 16:10 再运行一次。程序一天最多买一次，多跑不会重复下单，只是让电脑晚开机、OpenD 临时掉线或卖单没及时成交时，当天还有机会补上。16:10 那次已经收盘，不会下单，只按当天收盘价给实际账户和对照策略记账，并把带当天收盘的 `data/status.json` 推给第二天早上的分析。下面的时间请换算成你电脑所在的时区。
 
 **Windows**：在命令提示符（cmd）里运行下面这条。先把路径换成本文件夹的实际路径，再把 10:30 改成你的本地时间。`/RI 120 /DU 05:00` 表示从 10:30 起每 2 小时再跑一次，共 3 次；`/F` 会覆盖同名的旧任务。路径要写完整，不要用 `%CD%`，在 PowerShell 里它不会被替换，任务会找不到程序：
 
 ```
 schtasks /Create /F /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 10:30 /RI 120 /DU 05:00 /TN "moomoo-autoinvest" /TR "cmd /c cd /d C:\Users\你的用户名\Documents\moomoo && .venv\Scripts\python -m autoinvest run --execute"
+```
+
+收盘后那次单独建一个任务（同样换成实际路径和本地时间）：
+
+```
+schtasks /Create /F /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 16:10 /TN "moomoo-autoinvest-close" /TR "cmd /c cd /d C:\Users\你的用户名\Documents\moomoo && .venv\Scripts\python -m autoinvest run --execute"
 ```
 
 再在 PowerShell 里运行下面这条，让电脑错过时间（比如在睡眠）后醒来马上补跑：
@@ -59,6 +65,7 @@ $s = (Get-ScheduledTask -TaskName moomoo-autoinvest).Settings; $s.StartWhenAvail
 
 ```
 30 10,12,14 * * 1-5 cd /Users/你的用户名/moomoo-autoinvest && .venv/bin/python -m autoinvest run --execute
+10 16 * * 1-5 cd /Users/你的用户名/moomoo-autoinvest && .venv/bin/python -m autoinvest run --execute
 ```
 
 ## 看结果
@@ -73,6 +80,7 @@ $s = (Get-ScheduledTask -TaskName moomoo-autoinvest).Settings; $s.StartWhenAvail
 
 1. 美东 8:07 左右，Claude 的定时任务读取仓库里的 `data/status.json`（持仓、价格走势）和当天新闻，写出今天的目标比例和理由，提交到 GitHub。
 2. 美东 10:30，本程序先 `git pull` 拿到指令，校验通过后按新目标调仓，再把最新的 `data/status.json` 和 `logs/summary.csv` 推回 GitHub。
+3. 美东 16:10 收盘后，本程序按收盘价记账，再推一次 `data/status.json`（含当天收盘价和对照策略的收盘价值），第二天早上的分析就能看到前一天完整的收盘。
 
 Claude 的权限：只能用白名单里的 5 只 ETF（SCHB、SCHF、SCHZ、SCHO、GLDM），股票、债券、黄金各自的合计只能比当天的规则基准多或少 10 个百分点（`config.yaml` 的 `baseline.band`）。指令不合规、过期或缺失时，程序直接用当天的规则基准，并在日志里写明原因，所以 Claude 停了系统照样合理运转。通过校验的目标还要再过一遍上面的风险护栏。`logs/strategies.csv` 里的 `baseline` 列是不含 Claude 调整的规则基准虚拟账户，用来单独衡量 Claude 的调整帮了多少。
 
@@ -94,7 +102,7 @@ Claude 的权限：只能用白名单里的 5 只 ETF（SCHB、SCHF、SCHZ、SCH
 | vol_target | 按股票近 6 个月的波动，把整体波动控制在约 10% |
 | risk_parity | 按股票、债券各自波动的倒数分配 |
 
-每次执行后，`logs/strategies.csv` 记一行：`actual` 是实际账户价值，后面每列是一个策略的虚拟账户价值。对照账户在第一次执行那天建立，从同一天开始比。用的是 SCHB 和 SCHZ 两只 ETF 的价格，没算分红，所以绝对数字略低于真实收益，但各策略之间可以直接比。
+每个交易日收盘后（16:10 那次运行），`logs/strategies.csv` 记一行：`actual` 是实际账户的收盘价值，后面每列是一个策略的虚拟账户收盘价值，都按当天收盘价计算、需要时按收盘价虚拟调仓。盘中的运行不记。对照账户在第一次收盘后运行那天建立，从同一天开始比。某天收盘后没运行（比如电脑关着），那天就少一行，不影响之后的比较。用的是 SCHB 和 SCHZ 两只 ETF 的价格，没算分红，所以绝对数字略低于真实收益，但各策略之间可以直接比。
 
 `backtest/compare_results.txt` 是这些规则在 1954 年以来月度数据上的回测（`python -m backtest.compare` 重新生成）。回测用的是每月平均价，会让趋势类策略看起来比实际好，所以已经按“信号晚一个月执行”做了保守处理。Claude 的动态调整没法回测，因为 Claude 已经知道历史行情，只能从现在开始往前跑着比。
 

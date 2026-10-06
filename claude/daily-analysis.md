@@ -13,12 +13,12 @@
 1. 读取仓库里的 `data/status.json`：
    - `current_targets`：上一次实际执行的目标比例
    - `holdings`、`weights`：当前持仓和实际权重
-   - `managed_value`、`benchmark_value`：本账户和固定 60/40 对照线的价值
+   - `managed_value`、`benchmark_value`：本账户和固定 60/40 对照线的价值。`price_source` 为 `close` 时是前一个交易日收盘后（16:10）的记录，价格都是收盘价
    - `drawdown`：从高点的回撤
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
    - `signal_rules`：你必须遵守的边界。`mode` 为 `baseline` 时，`allowed_ranges` 是股票、债券、黄金各自合计今天允许的 [下限, 上限]（已经叠加了护栏）
    - `baseline`：今天的趋势状态 `regime`（above / below / unknown）、基准比例 `targets`
-   - `strategies`：各对照策略的虚拟账户价值，`baseline` 是规则基准本身
+   - `strategies`：各对照策略按收盘价计算的虚拟账户价值，`baseline` 是规则基准本身；有 `strategies_day` 时表示这是那天收盘的值
    - `guards`、`guard_rules`：代码里的风险护栏。`guards.trend.below` 为 true 表示 SCHB 低于约 10 个月均线，此时股票合计上限是 `guards.stock_cap`；`guards.drawdown_brake` 为 true 表示回撤已超过刹车线，不能再加股票
    - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因、护栏有没有动手
 2. 按下面“信息收集清单和预算”查看过去 24 小时影响美股和美债的重要信息，并记下链接。

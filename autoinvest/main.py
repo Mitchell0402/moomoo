@@ -64,7 +64,7 @@ def write_log(log_dir: Path, record: dict):
 
 
 def write_strategies(log_dir: Path, record: dict):
-    """每次真正执行后记一行：实际账户（Claude 或固定目标）和每个对照策略的虚拟账户价值。"""
+    """每天收盘后记一行：实际账户（Claude 或固定目标）和每个对照策略的虚拟账户价值，都按收盘价。"""
     path = log_dir / "strategies.csv"
     names = list(record["strategies"])
     header = ",".join(["time", "actual"] + names)
@@ -133,6 +133,15 @@ def ledger_mode(cfg: dict) -> str:
 
 
 FILLED = "FILLED_ALL"
+NOT_YET_OPEN = {"WAITING_OPEN", "AUCTION", "NONE", "N/A"}
+
+
+def session_closed(state_now: str, closes: dict, code: str, today: str) -> bool:
+    """今天的常规交易时段已经结束、日 K 线里已有今天这根：今天的收盘价定下来了。"""
+    if state_now in OPEN_STATES or state_now in NOT_YET_OPEN or state_now.startswith("PRE"):
+        return False
+    bars = closes.get(code) or []
+    return bool(bars) and bars[-1][0] == today
 
 
 def wait_filled(broker, order_ids: list[str], timeout: float, interval: float = 5) -> bool:
@@ -241,6 +250,16 @@ def main(argv=None):
             prices.update(broker.prices(extra))
 
         today = dt.date.today().isoformat()
+        state_now = broker.market_state()
+        record["market_state"] = state_now
+        # 收盘后运行：一律用当天日 K 线的收盘价记账（快照里的盘后价不算）
+        closed_today = session_closed(state_now, closes, sh_cfg.get("stock") or g["trend_code"], today)
+        if closed_today:
+            for c in prices:
+                bars = closes.get(c) or []
+                if bars and bars[-1][0] == today:
+                    prices[c] = float(bars[-1][1])
+            record["price_source"] = "close"
         value_now = ledger.cash + sum(ledger.holdings[c] * prices[c] for c in codes)
         peak = max(float(state.get("peak_value", 0)), value_now)
         drawdown = 1 - value_now / peak if peak else 0.0
@@ -306,8 +325,6 @@ def main(argv=None):
                         and o.get("trd_side") == "BUY"]
         applied = False
         if mode == "execute":
-            state_now = broker.market_state()
-            record["market_state"] = state_now
             market_open = state_now in OPEN_STATES or not cfg.get("require_market_open", True)
             if not plan.orders:
                 applied = market_open
@@ -337,21 +354,21 @@ def main(argv=None):
                                                  "qty": o.qty, "price": o.price})
                 applied = True
             if applied and market_open:
-                # 只有真正在交易时段执行过，才把今天的目标记为"当前目标"，也才推进对照线
+                # 只有真正在交易时段执行过，才把今天的目标记为"当前目标"
                 state["targets"] = targets
-                if sh_cfg.get("strategies"):
-                    # 一天可能运行好几次，对照账户每天只记一次
-                    if state.get("shadow_day") != today:
-                        state["shadow_values"] = update_shadows(state, sh_cfg, closes, prices,
-                                                                cfg["budget_usd"], today)
-                        if base is not None:
-                            state["shadow_values"]["baseline"] = update_baseline_shadow(
-                                state, base, prices, cfg["budget_usd"], sh_cfg.get("band", 0.05), today)
-                        state["shadow_day"] = today
-                        shadow_fresh = True
-                    values = state["shadow_values"]
-                    record["strategies"] = values
-                    record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
+            if closed_today and sh_cfg.get("strategies"):
+                # 对照账户只在收盘后按收盘价记账、每天一次，和实际账户的收盘价值同口径比较
+                if state.get("shadow_day") != today:
+                    state["shadow_values"] = update_shadows(state, sh_cfg, closes, prices,
+                                                            cfg["budget_usd"], today)
+                    if base is not None:
+                        state["shadow_values"]["baseline"] = update_baseline_shadow(
+                            state, base, prices, cfg["budget_usd"], sh_cfg.get("band", 0.05), today)
+                    state["shadow_day"] = today
+                    shadow_fresh = True
+                values = state["shadow_values"]
+                record["strategies"] = values
+                record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
             record["planned_orders"] = [{"code": o.code, "side": o.side, "qty": o.qty, "price": o.price}
                                         for o in plan.orders]
@@ -360,7 +377,13 @@ def main(argv=None):
         if use_signal:
             status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
-                                                 "strategies", "guards", "ledger_mode", "baseline")}
+                                                 "strategies", "guards", "ledger_mode", "baseline",
+                                                 "price_source")}
+            if not status.get("strategies") and state.get("shadow_values"):
+                # 盘中运行没有新的对照数据，带上最近一次收盘的
+                status["strategies"] = state["shadow_values"]
+                status["benchmark_value"] = state["shadow_values"].get(sh_cfg.get("benchmark", "fixed_60_40"))
+                status["strategies_day"] = state.get("shadow_day")
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}

@@ -29,9 +29,10 @@ class FakeBroker:
     def orders_since(self, start):
         return list(FakeBroker.orders)
 
+    table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0}
+
     def prices(self, codes):
-        table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0}
-        return {c: table[c] for c in codes}
+        return {c: FakeBroker.table[c] for c in codes}
 
     def daily_closes(self, codes, days):
         if FakeBroker.closes:
@@ -68,6 +69,16 @@ def sandbox(tmp_path, monkeypatch):
     FakeBroker.placed, FakeBroker.orders, FakeBroker.state, FakeBroker.env = [], [], "MORNING", None
     FakeBroker.closes, FakeBroker.held, FakeBroker.cash, FakeBroker.fill = None, {}, 1_000_000.0, "FILLED_ALL"
     return root
+
+
+def after_close(close=None):
+    """收盘后：市场状态变成盘后，日 K 线里多了今天这根（默认收盘价等于快照价）。"""
+    today = dt.date.today().isoformat()
+    close = close or {}
+    old = FakeBroker.closes or {}
+    FakeBroker.state = "AFTER_HOURS_BEGIN"
+    FakeBroker.closes = {c: [b for b in old.get(c, [["2026-10-02", 1.0]]) if b[0] < today] + [[today, close.get(c, p)]]
+                         for c, p in FakeBroker.table.items()}
 
 
 def run(root, *extra):
@@ -160,7 +171,11 @@ def test_signal_mode_follows_claude_targets(sandbox):
     assert bought["US.SCHF"] == int(2000 * 0.98 * 0.10 // 22.0)
     status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
     assert status["current_targets"]["US.SCHF"] == 0.10
-    assert "daily_closes" in status and status["benchmark_value"] == 2000.0
+    assert "daily_closes" in status and status["strategies"] is None  # 盘中不记对照账户
+    after_close()
+    run(sandbox, "--execute")
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["price_source"] == "close" and status["benchmark_value"] == 2000.0
     assert set(status["strategies"]) >= {"fixed_60_40", "trend_100", "risk_parity"}
     lines = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()
     assert lines[0].startswith("time,actual,fixed_100") and len(lines) == 2
@@ -290,6 +305,7 @@ def test_old_config_without_baseline_section_gets_defaults(sandbox):
 
 def test_baseline_shadow_is_logged(sandbox):
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    after_close()
     run(sandbox, "--execute")
     header = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()[0]
     assert header.endswith(",baseline")
@@ -300,6 +316,7 @@ def test_strategies_csv_rolls_over_when_columns_change(sandbox):
     logs.mkdir()
     (logs / "strategies.csv").write_text("time,actual,fixed_100\nx,1,2\n", encoding="utf-8")
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    after_close()
     run(sandbox, "--execute")
     assert len(list(logs.glob("strategies-until-*.csv"))) == 1
     assert (logs / "strategies.csv").read_text(encoding="utf-8").splitlines()[0].endswith(",baseline")
@@ -363,7 +380,54 @@ def test_shadows_logged_once_per_day(sandbox):
     run(sandbox, "--execute")
     FakeBroker.placed = []
     FakeBroker.orders = held_orders(47, 34)
+    after_close()
+    run(sandbox, "--execute")
     run(sandbox, "--execute")
     lines = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()
     assert len(lines) == 2
     assert last_log(sandbox)["benchmark_value"] == 2000.0
+
+
+def test_intraday_runs_do_not_log_shadows(sandbox):
+    run(sandbox, "--execute")
+    assert not (sandbox / "logs" / "strategies.csv").exists()
+    assert "benchmark_value" not in last_log(sandbox)
+
+
+def test_after_close_values_everything_at_closing_price(sandbox):
+    FakeBroker.orders = held_orders(47, 34)
+    FakeBroker.held = {"US.SCHB": 47, "US.SCHZ": 34}
+    after_close({"US.SCHB": 26.0, "US.SCHZ": 22.5})   # 快照价 25 / 23，收盘价以 K 线为准
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["price_source"] == "close"
+    assert log["prices"]["US.SCHB"] == 26.0 and log["prices"]["US.SCHZ"] == 22.5
+    assert log["managed_value"] == round(2000 - 47 * 25 - 34 * 23 + 47 * 26.0 + 34 * 22.5, 2)
+    assert log["strategies"]["fixed_60_40"] > 0 and FakeBroker.placed == []
+    line = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()[1]
+    assert line.split(",")[1] == str(log["managed_value"])
+
+
+def test_intraday_status_carries_last_close_strategies(sandbox):
+    edit_config(sandbox, "  enabled: false         # 改成 true", "  enabled: true         # 改成 true")
+    edit_config(sandbox, "  git_sync: true", "  git_sync: false")
+    after_close()
+    run(sandbox, "--execute")
+    FakeBroker.state, FakeBroker.closes = "MORNING", None
+    run(sandbox, "--execute")
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["benchmark_value"] == 2000.0 and status["strategies_day"] == dt.date.today().isoformat()
+
+
+@pytest.mark.parametrize("state,has_bar,expected", [
+    ("AFTER_HOURS_BEGIN", True, True),
+    ("CLOSED", True, True),
+    ("AFTER_HOURS_BEGIN", False, False),   # 周末、假日：没有今天这根
+    ("AFTERNOON", True, False),            # 盘中的 K 线也可能有今天这根，但还没收盘
+    ("PRE_MARKET_BEGIN", True, False),
+    ("WAITING_OPEN", True, False),
+])
+def test_session_closed(state, has_bar, expected):
+    today = dt.date.today().isoformat()
+    bars = [["2026-10-02", 1.0]] + ([[today, 2.0]] if has_bar else [])
+    assert m.session_closed(state, {"US.SCHB": bars}, "US.SCHB", today) is expected
