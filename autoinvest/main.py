@@ -182,7 +182,7 @@ def main(argv=None):
         return 0
 
     if sync:
-        ok, out = git("pull", "--rebase")
+        ok, out = git("pull", "--rebase", "--autostash")
         if not ok:
             record["notes"].append(f"拉取 Claude 指令失败（git pull）：{out[-200:]}")
 
@@ -391,7 +391,7 @@ def main(argv=None):
         git("add", "data/status.json", *[str((log_dir / f).relative_to(ROOT)) for f in ("summary.csv", "strategies.csv")
                                           if (log_dir / f).exists()])
         git("commit", "-m", f"daily status {record['time']}")
-        ok, out = git("pull", "--rebase")
+        ok, out = git("pull", "--rebase", "--autostash")
         ok2, out2 = git("push")
         if not (ok and ok2):
             print(f"推送日志到 GitHub 失败：{(out + out2)[-300:]}")
