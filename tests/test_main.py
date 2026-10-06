@@ -16,6 +16,8 @@ class FakeBroker:
     placed = []
     orders = []
     closes = None
+    bars = []
+    bars_error = False
     held = {}
     cash = 1_000_000.0
     fill = "FILLED_ALL"
@@ -39,6 +41,11 @@ class FakeBroker:
         if FakeBroker.closes:
             return {c: FakeBroker.closes.get(c, [["2026-10-02", 1.0]]) for c in codes}
         return {c: [["2026-10-02", 1.0]] for c in codes}
+
+    def daily_bars(self, code, days):
+        if FakeBroker.bars_error:
+            raise m.BrokerError("K 线查询失败")
+        return list(FakeBroker.bars)
 
     def account_cash(self):
         return FakeBroker.cash
@@ -70,6 +77,7 @@ def sandbox(tmp_path, monkeypatch):
     FakeBroker.placed, FakeBroker.orders, FakeBroker.state, FakeBroker.env = [], [], "MORNING", None
     FakeBroker.closes, FakeBroker.held, FakeBroker.cash, FakeBroker.fill = None, {}, 1_000_000.0, "FILLED_ALL"
     FakeBroker.price_override = {}
+    FakeBroker.bars, FakeBroker.bars_error = [], False
     return root
 
 
@@ -295,17 +303,24 @@ def test_baseline_shadow_is_logged(sandbox):
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
     run(sandbox, "--execute")
     header = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()[0]
-    assert header.endswith(",baseline")
+    assert header.endswith(",baseline,intraday")
 
 
-def test_strategies_csv_rolls_over_when_columns_change(sandbox):
+def test_strategies_csv_keeps_old_rows_when_columns_change(sandbox):
     logs = sandbox / "logs"
     logs.mkdir()
-    (logs / "strategies.csv").write_text("time,actual,fixed_100\nx,1,2\n", encoding="utf-8")
+    (logs / "strategies.csv").write_text("time,actual,fixed_100\n2026-10-01T16:10:00,1990,2010\n",
+                                         encoding="utf-8")
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
     run(sandbox, "--execute")
-    assert len(list(logs.glob("strategies-until-*.csv"))) == 1
-    assert (logs / "strategies.csv").read_text(encoding="utf-8").splitlines()[0].endswith(",baseline")
+    assert list(logs.glob("strategies-until-*.csv")) == []
+    lines = (logs / "strategies.csv").read_text(encoding="utf-8").splitlines()
+    names = lines[0].split(",")
+    assert names[-2:] == ["baseline", "intraday"] and len(lines) == 3
+    old = dict(zip(names, lines[1].split(",")))
+    assert old["actual"] == "1990" and old["fixed_100"] == "2010" and old["intraday"] == ""
+    new = dict(zip(names, lines[2].split(",")))
+    assert new["intraday"] == "2000.0" and new["fixed_100"] == "2000.0"
 
 
 def held_orders(schb, schz):
@@ -391,3 +406,67 @@ def test_after_close_run_values_shadows_at_close(sandbox):
     assert len(lines) == 2  # 当天那行被收盘后的估值覆盖
     names = lines[0].split(",")
     assert float(lines[1].split(",")[names.index("fixed_60_40")]) == expected
+
+
+def test_intraday_shadow_books_open_to_close_once_per_day():
+    from autoinvest.main import update_intraday_shadow
+    state = {}
+    # 第一次在 10-05 盘中运行：今天开盘 10，现价 10.5，按开盘买、现价估值
+    v = update_intraday_shadow(state, [["2026-10-02", 9, 9.5], ["2026-10-05", 10.0, 10.4]], 10.5, 2000,
+                               "2026-10-05", 0.0005)
+    assert v == round(2000 * 1.05 * 0.9995, 2)
+    assert state["shadows"]["intraday"]["value"] == 2000  # 今天还没收完，不记账；建立前的日子不算
+    # 第二天：10-05 按日 K 线开盘 10、收盘 10.4 记一次账；今天还没开盘的话就只有昨天的
+    bars = [["2026-10-05", 10.0, 10.4]]
+    v = update_intraday_shadow(state, bars, 11.0, 2000, "2026-10-06", 0.0005)
+    assert v == round(2000 * 1.04 * 0.9995, 2)
+    # 同一天再跑一次，不会重复记账
+    assert update_intraday_shadow(state, bars, 11.0, 2000, "2026-10-06", 0.0005) == v
+    assert state["shadows"]["intraday"]["last_day"] == "2026-10-05"
+
+
+def test_intraday_shadow_logged_and_survives_kline_error(sandbox):
+    today = dt.date.today().isoformat()
+    FakeBroker.bars = [[today, 24.0, 25.5]]
+    run(sandbox, "--execute")
+    assert last_log(sandbox)["strategies"]["intraday"] == round(2000 * 25.0 / 24.0 * 0.9995, 2)
+    FakeBroker.bars_error = True
+    FakeBroker.placed, FakeBroker.orders = [], held_orders(47, 34)
+    assert run(sandbox, "--execute") == 0
+    log = last_log(sandbox)
+    assert "intraday" not in log["strategies"] and any("日内对照这次没有更新" in n for n in log["notes"])
+
+
+def test_intraday_shadow_can_be_turned_off(sandbox):
+    edit_config(sandbox, "  intraday: true ", "  intraday: false ")
+    run(sandbox, "--execute")
+    assert "intraday" not in last_log(sandbox)["strategies"]
+
+
+def test_unexpected_error_is_logged(sandbox, monkeypatch):
+    monkeypatch.setattr(FakeBroker, "positions", lambda self: 1 / 0)
+    assert run(sandbox, "--execute") == 1
+    log = last_log(sandbox)
+    assert any(n.startswith("错误：程序异常 ZeroDivisionError") for n in log["notes"])
+    assert "Traceback" in log["traceback"]
+
+
+def test_position_mismatch_does_not_mark_targets_applied(sandbox):
+    FakeBroker.orders = held_orders(47, 34)
+    FakeBroker.held = {"US.SCHB": 10, "US.SCHZ": 34}  # 实际持仓比程序记录的少
+    run(sandbox, "--execute")
+    assert FakeBroker.placed == []
+    state = json.loads((sandbox / "state.json").read_text(encoding="utf-8"))
+    assert "targets" not in state and any("警告" in n for n in last_log(sandbox)["notes"])
+
+
+def test_drawdown_brake_lets_claude_move_the_cut_into_bonds(sandbox):
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}  # 均线上方，基准 70/20/10
+    (sandbox / "state.json").write_text(json.dumps({"peak_value": 3000.0, "targets": {
+        "US.SCHB": 0.5, "US.SCHZ": 0.4, "US.GLDM": 0.1}}), encoding="utf-8")  # 回撤 33%，上次股票 50%
+    enable_signal(sandbox, {"US.SCHB": 0.5, "US.SCHZ": 0.4, "US.GLDM": 0.1})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["baseline"]["ranges"]["stock"] == [0.5, 0.5]
+    assert log["baseline"]["ranges"]["bond"] == [0.1, 0.5]
+    assert log["signal"] and log["targets"]["US.SCHZ"] == 0.4

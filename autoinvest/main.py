@@ -15,6 +15,7 @@ import json
 import subprocess
 import sys
 import time
+import traceback
 from pathlib import Path
 
 import yaml
@@ -69,19 +70,24 @@ def write_strategies(log_dir: Path, record: dict):
     path = log_dir / "strategies.csv"
     names = list(record["strategies"])
     header = ",".join(["time", "actual"] + names)
-    lines = []
-    if path.exists():
-        lines = path.read_text(encoding="utf-8").splitlines()
-        if not lines or lines[0].strip() != header:
-            # 对照策略的列变了（比如新加了 baseline），旧文件改名保存，新开一个
-            path.rename(log_dir / f"strategies-until-{record['time'][:10]}.csv")
-            lines = []
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    if lines and lines[0].strip() != header:
+        # 对照策略的列变了（比如新加了一个策略）：旧的行按列名搬到新表头下，新列在旧行里留空，
+        # 这样从第一天起的记录都在同一个文件里
+        old = lines[0].strip().split(",")
+        cols = ["time", "actual"] + names
+        cols += [c for c in old if c not in cols]
+        rows = [dict(zip(old, ln.split(","))) for ln in lines[1:] if ln.strip()]
+        header = ",".join(cols)
+        lines = [header] + [",".join(r.get(c, "") for c in cols) for r in rows]
     if not lines:
         lines = [header]
     elif len(lines) > 1 and lines[-1].startswith(record["time"][:10]):
         lines.pop()
-    lines.append(",".join([record["time"], str(record.get("managed_value", ""))]
-                          + [str(record["strategies"][n]) for n in names]))
+    cols = lines[0].split(",")
+    vals = {"time": record["time"], "actual": str(record.get("managed_value", "")),
+            **{n: str(v) for n, v in record["strategies"].items()}}
+    lines.append(",".join(vals.get(c, "") for c in cols))
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -121,6 +127,26 @@ def update_baseline_shadow(state: dict, base: dict, prices: dict, budget: float,
         acct["units"] = {c: value * w / prices[c] for c, w in base.items() if w > 0}
         acct["cash"] = value * (1 - sum(base.values()))
     book["baseline"] = acct
+    return round(value, 2)
+
+
+def update_intraday_shadow(state: dict, bars: list, price_now: float, budget: float, today: str,
+                           cost: float) -> float:
+    """日内对照：每个交易日开盘价买入股票 ETF、收盘价全部卖出，晚上拿现金，每次来回扣 cost。
+    不下单，只用来回答"做日内交易能不能比长期持有赚得多"。
+    已经收完的交易日（今天以前）按日 K 线的开盘价和收盘价记账，每天只记一次；
+    今天开盘后按现价估值，收盘后那次运行就是今天的收盘价。"""
+    book = state.setdefault("shadows", {})
+    acct = book.get("intraday") or {"start": today, "value": float(budget), "last_day": ""}
+    for d, o, c in bars:
+        if acct["start"] <= d < today and d > acct["last_day"] and o > 0:
+            acct["value"] *= c / o * (1 - cost)
+            acct["last_day"] = d
+    book["intraday"] = acct
+    value = acct["value"]
+    opens = [o for d, o, _ in bars if d == today and o > 0]
+    if opens and today >= acct["start"]:
+        value *= price_now / opens[0] * (1 - cost)
     return round(value, 2)
 
 
@@ -280,6 +306,10 @@ def main(argv=None):
             cap = guards.stock_cap(trend, drawdown, prev_targets, g)
             if "stock" in ranges:
                 ranges["stock"] = [min(ranges["stock"][0], cap), min(ranges["stock"][1], cap)]
+                # 压下来的股票比例允许放进债券（护栏自己也是这样挪的），不然 Claude 只能被迫留现金
+                cut = sum(base.get(c, 0.0) for c in groups.get("stock", [])) - cap
+                if cut > 1e-9 and "bond" in ranges:
+                    ranges["bond"][1] = round(min(1.0, ranges["bond"][1] + cut), 4)
             record["baseline"] = {"regime": regime, "targets": base, "band": b["band"], "ranges": ranges}
             targets = dict(base)
 
@@ -313,10 +343,12 @@ def main(argv=None):
             record["notes"].append(f"提醒：已从高点回撤 {drawdown:.1%}，超过提醒线 {cfg['alert_drawdown']:.0%}（程序不会因此卖出）")
 
         actual = broker.positions()
+        mismatch = False
         for c in codes if mode_ledger == "orders" else []:
             if actual.get(c, 0.0) + 1e-9 < ledger.holdings[c]:
                 record["notes"].append(f"警告：{c} 实际持仓 {actual.get(c, 0)} 少于程序记录 {ledger.holdings[c]}，本次不下单")
                 plan.orders = []
+                mismatch = True
 
         pending = [o for o in ours if o.get("order_status") in OPEN_ORDER_STATUSES]
         # 当天只卖不买的情况（卖单没及时成交、买单留到下次）允许当天再跑一次把买单补上
@@ -327,7 +359,9 @@ def main(argv=None):
             state_now = broker.market_state()
             record["market_state"] = state_now
             market_open = state_now in OPEN_STATES or not cfg.get("require_market_open", True)
-            if not plan.orders:
+            if mismatch:
+                pass  # 持仓对不上时不下单，也不把今天的目标记成"已执行"
+            elif not plan.orders:
                 applied = market_open
             elif pending:
                 record["notes"].append(f"还有 {len(pending)} 笔未完成订单，本次不再下单")
@@ -368,6 +402,14 @@ def main(argv=None):
                 # 每次运行都按现价重新估值（不调仓），收盘后那次就是收盘价
                 kinds = list(sh_cfg["strategies"]) + (["baseline"] if base is not None else [])
                 values = value_shadows(state, sh_cfg, prices, kinds)
+                if sh_cfg.get("intraday", True):
+                    try:
+                        bars = broker.daily_bars(sh_cfg["stock"], 30)
+                        values["intraday"] = update_intraday_shadow(
+                            state, bars, prices[sh_cfg["stock"]], cfg["budget_usd"], today,
+                            float(sh_cfg.get("intraday_cost", 0.0005)))
+                    except BrokerError as e:
+                        record["notes"].append(f"日内对照这次没有更新：{e}")
                 record["strategies"] = values
                 record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
@@ -396,6 +438,10 @@ def main(argv=None):
             (data_dir / "status.json").write_text(json.dumps(status, ensure_ascii=False, indent=1), encoding="utf-8")
     except BrokerError as e:
         record["notes"].append(f"错误：{e}")
+    except Exception as e:
+        # 意料之外的程序错误也要写进日志并推回去，不然这次运行就悄无声息地没了
+        record["notes"].append(f"错误：程序异常 {type(e).__name__}: {e}")
+        record["traceback"] = traceback.format_exc()
     finally:
         if broker:
             broker.close()

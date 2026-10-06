@@ -73,6 +73,14 @@ class MoomooBroker:
             out[c] = [[str(t)[:10], round(float(p), 4)] for t, p in zip(df["time_key"], df["close"])][-days:]
         return out
 
+    def daily_bars(self, code: str, days: int = 30) -> list[list]:
+        """一个代码最近 days 个交易日的 [日期, 开盘价, 收盘价]（前复权），给日内对照用。盘中可能含今天这根。"""
+        start = (dt.date.today() - dt.timedelta(days=int(days * 1.6) + 5)).isoformat()
+        ret, df, _ = self.quote.request_history_kline(code, start=start, end=dt.date.today().isoformat(),
+                                                      max_count=1000)
+        df = self._check(ret, df, f"查询 {code} 日 K 线")
+        return [[str(t)[:10], float(o), float(c)] for t, o, c in zip(df["time_key"], df["open"], df["close"])][-days:]
+
     def account_cash(self) -> float:
         df = self._check(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, currency="USD"),
                          "查询资金")

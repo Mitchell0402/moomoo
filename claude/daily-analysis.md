@@ -18,7 +18,7 @@
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
    - `signal_rules`：你必须遵守的边界。`mode` 为 `baseline` 时，`allowed_ranges` 是股票、债券、黄金各自合计今天允许的 [下限, 上限]（已经叠加了护栏）
    - `baseline`：今天的趋势状态 `regime`（above / below / unknown）、基准比例 `targets`
-   - `strategies`：各对照策略的虚拟账户价值，`baseline` 是规则基准本身
+   - `strategies`：各对照策略的虚拟账户价值，`baseline` 是规则基准本身，`intraday` 是日内交易对照（开盘买收盘卖，只用来回答日内交易值不值得做，和你的决定无关）
    - `guards`、`guard_rules`：代码里的风险护栏。`guards.trend.below` 为 true 表示 SCHB 低于约 10 个月均线，此时股票合计上限是 `guards.stock_cap`；`guards.drawdown_brake` 为 true 表示回撤已超过刹车线，不能再加股票
    - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因、护栏有没有动手
 2. 按下面“信息收集清单和预算”查看过去 24 小时影响美股和美债的重要信息，并记下链接。
@@ -109,4 +109,4 @@ Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库�
 
 ## 每周五额外做一件事
 
-在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、下周需要关注的事件。一起提交。
+在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、日内对照（`strategies.intraday`）和全仓股票（`strategies.fixed_100`）的对比（一两句话，说明日内到目前为止是赚是亏）、下周需要关注的事件。一起提交。
