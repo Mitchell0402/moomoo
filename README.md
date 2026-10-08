@@ -99,6 +99,10 @@ Claude 的权限：只能用白名单里的 5 只 ETF（SCHB、SCHF、SCHZ、SCH
 
 `backtest/compare_results.txt` 是这些规则在 1954 年以来月度数据上的回测（`python -m backtest.compare` 重新生成）。回测用的是每月平均价，会让趋势类策略看起来比实际好，所以已经按“信号晚一个月执行”做了保守处理。Claude 的动态调整没法回测，因为 Claude 已经知道历史行情，只能从现在开始往前跑着比。
 
+## 备份和重装电脑
+
+每次自动运行都会把电脑上不进仓库的文件（`config.yaml`、`state.json`、每次运行的日志、Windows 计划任务定义）复制到 `backup/` 一起推到 GitHub，密码类字段会清空。重装前可以手动再跑一次 `PY -m autoinvest backup`。恢复步骤见 [docs/restore.md](docs/restore.md)。
+
 ## 测试
 
 `PY -m pytest`：用一个假的券商把整个流程跑一遍，不需要 OpenD，也不会连接 moomoo。
