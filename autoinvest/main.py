@@ -21,7 +21,7 @@ from pathlib import Path
 import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
-from . import baseline, guards
+from . import backup, baseline, guards
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .strategy import Ledger, build_ledger, plan_rebalance
@@ -204,7 +204,7 @@ def git(*args: str) -> tuple[bool, str]:
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="autoinvest")
-    p.add_argument("command", choices=["run", "status"])
+    p.add_argument("command", choices=["run", "status", "backup"])
     p.add_argument("--execute", action="store_true", help="真正下单（默认只演练）")
     p.add_argument("--config", default=str(ROOT / "config.yaml"))
     args = p.parse_args(argv)
@@ -219,6 +219,16 @@ def main(argv=None):
     sig_cfg = cfg.get("signal") or {}
     use_signal = bool(sig_cfg.get("enabled"))
     sync = use_signal and mode == "execute" and bool(sig_cfg.get("git_sync", True))
+
+    if args.command == "backup":
+        # 手动备份：重装电脑前跑一次，把不进仓库的文件推到 GitHub
+        dest = backup.snapshot(ROOT, log_dir)
+        git("add", str(dest.relative_to(ROOT)))
+        git("commit", "-m", f"backup {record['time']}")
+        ok, out = git("pull", "--rebase", "--autostash")
+        ok2, out2 = git("push")
+        print(f"已备份到 {dest}" if ok and ok2 else f"备份推送到 GitHub 失败：{(out + out2)[-300:]}")
+        return 0 if ok and ok2 else 1
 
     if (ROOT / "STOP").exists() or not cfg.get("enabled", True):
         record["notes"].append("总开关已关闭（存在 STOP 文件或 enabled: false），不做任何操作")
@@ -452,6 +462,12 @@ def main(argv=None):
         write_strategies(log_dir, record)
 
     if sync:
+        # 顺便备份不进仓库的配置和状态文件，重装电脑也不丢；备份出错不影响推送当天的数据
+        try:
+            backup.snapshot(ROOT, log_dir)
+            git("add", "backup")
+        except OSError as e:
+            print(f"备份失败：{e}")
         git("add", "data/status.json", *[str((log_dir / f).relative_to(ROOT)) for f in ("summary.csv", "strategies.csv")
                                           if (log_dir / f).exists()])
         git("commit", "-m", f"daily status {record['time']}")
