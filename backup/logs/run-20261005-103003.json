@@ -1,0 +1,67 @@
+{
+  "time": "2026-10-05T10:30:00",
+  "mode": "execute",
+  "notes": [
+    "没有找到 Claude 的指令文件，沿用上一次的目标"
+  ],
+  "orders": [
+    {
+      "order_id": "798908",
+      "code": "US.SCHB",
+      "side": "BUY",
+      "qty": 39,
+      "price": 29.8
+    },
+    {
+      "order_id": "798909",
+      "code": "US.SCHZ",
+      "side": "BUY",
+      "qty": 35,
+      "price": 22.05
+    }
+  ],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.6,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.4,
+    "US.SCHO": 0.0
+  },
+  "acc_id": 2863134,
+  "prices": {
+    "US.SCHB": 29.7324,
+    "US.SCHF": 27.54,
+    "US.SCHZ": 22.005,
+    "US.SCHO": 23.825
+  },
+  "ledger_cash": 2000.0,
+  "holdings": {
+    "US.SCHB": 0.0,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.0,
+    "US.SCHO": 0.0
+  },
+  "account_cash": 1000000.0,
+  "managed_value": 2000.0,
+  "weights": {
+    "US.SCHB": 0.0,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.0,
+    "US.SCHO": 0.0
+  },
+  "max_drift": 0.6,
+  "drawdown": 0.0,
+  "market_state": "AFTERNOON",
+  "strategies": {
+    "fixed_100": 2000.0,
+    "fixed_80_20": 2000.0,
+    "fixed_60_40": 2000.0,
+    "fixed_50_50": 2000.0,
+    "trend_100": 2000.0,
+    "trend_80_30": 2000.0,
+    "dual_momentum": 2000.0,
+    "vol_target": 2000.0,
+    "risk_parity": 2000.0
+  },
+  "benchmark_value": 2000.0
+}

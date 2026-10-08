@@ -1,0 +1,98 @@
+{
+  "time": "2026-10-06T18:22:05",
+  "mode": "dry-run",
+  "notes": [
+    "Claude 的指令被拒绝：债券合计 40% 不在今天基准允许的 10%–30% 之间。用今天的规则基准"
+  ],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.7,
+    "US.SCHZ": 0.2,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "ledger_mode": "orders",
+  "baseline": {
+    "regime": "above",
+    "targets": {
+      "US.SCHB": 0.7,
+      "US.SCHZ": 0.2,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.1,
+    "ranges": {
+      "stock": [
+        0.6,
+        0.8
+      ],
+      "bond": [
+        0.1,
+        0.3
+      ],
+      "gold": [
+        0.0,
+        0.2
+      ]
+    }
+  },
+  "guards": {
+    "trend": {
+      "price": 29.97,
+      "sma": 27.6321,
+      "below": false
+    },
+    "stock_cap": 1.0,
+    "drawdown_brake": false
+  },
+  "prices": {
+    "US.SCHB": 29.97,
+    "US.SCHZ": 22.05,
+    "US.SCHF": 27.6,
+    "US.SCHO": 23.85,
+    "US.GLDM": 82.45
+  },
+  "ledger_cash": 70.35,
+  "holdings": {
+    "US.SCHB": 39.0,
+    "US.SCHZ": 35.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.0
+  },
+  "account_cash": 998068.374,
+  "managed_value": 2010.93,
+  "weights": {
+    "US.SCHB": 0.5812,
+    "US.SCHZ": 0.3838,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.0
+  },
+  "max_drift": 0.1838,
+  "drawdown": 0.0,
+  "planned_orders": [
+    {
+      "code": "US.SCHZ",
+      "side": "SELL",
+      "qty": 18,
+      "price": 22.0
+    },
+    {
+      "code": "US.SCHB",
+      "side": "BUY",
+      "qty": 7,
+      "price": 30.03
+    },
+    {
+      "code": "US.GLDM",
+      "side": "BUY",
+      "qty": 2,
+      "price": 82.62
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "time": "2026-10-05T03:12:33",
+  "mode": "dry-run",
+  "notes": [],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.6,
+    "US.SCHZ": 0.4
+  },
+  "acc_id": 2863134,
+  "prices": {
+    "US.SCHB": 29.61,
+    "US.SCHZ": 22.03
+  },
+  "ledger_cash": 2000.0,
+  "holdings": {
+    "US.SCHB": 0.0,
+    "US.SCHZ": 0.0
+  },
+  "account_cash": 1000000.0,
+  "managed_value": 2000.0,
+  "weights": {
+    "US.SCHB": 0.0,
+    "US.SCHZ": 0.0
+  },
+  "max_drift": 0.6,
+  "drawdown": 0.0,
+  "planned_orders": [
+    {
+      "code": "US.SCHB",
+      "side": "BUY",
+      "qty": 39,
+      "price": 29.67
+    },
+    {
+      "code": "US.SCHZ",
+      "side": "BUY",
+      "qty": 35,
+      "price": 22.08
+    }
+  ]
+}

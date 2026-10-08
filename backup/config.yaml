@@ -1,0 +1,67 @@
+# 复制成 config.yaml 再修改：  cp config.example.yaml config.yaml
+
+enabled: true            # 改成 false 或在本文件夹放一个名为 STOP 的空文件，程序就不做任何操作
+trd_env: SIMULATE        # SIMULATE = 模拟盘；REAL = 实盘（真钱）
+real_money_confirmed: false   # 切实盘时必须同时改成 true，两处都改了才会用真钱
+
+opend_host: 127.0.0.1    # OpenD 和本程序在同一台电脑上时不用改
+opend_port: 11111
+acc_id: 0                # 0 = 自动选第一个美股账户（模拟盘或实盘，按 trd_env）
+
+budget_usd: 2000         # 程序只管理这么多钱，模拟盘里其余虚拟资金不碰
+start_date: 2026-10-05   # 从这天起，带下面 remark 的订单都算作本程序的
+remark: autoinvest-v1
+
+# 目标配置（示例，可自行修改，权重加起来必须等于 1）
+# US.SCHB = 嘉信美国全市场股票 ETF，US.SCHZ = 嘉信美国综合债券 ETF
+# 单价都较低，2000 美元按整股买入时误差小
+targets:
+  US.SCHB: 0.60
+  US.SCHZ: 0.40
+
+rebalance_band: 0.05     # 任一标的偏离目标超过 5 个百分点才调仓
+cash_buffer: 0.02        # 留 2% 现金，防止价格变动导致买不起
+limit_slippage: 0.002    # 限价单比现价高（买）或低（卖）0.2%
+max_order_value_usd: 1500   # 单笔上限
+max_daily_value_usd: 2500   # 每天成交总额上限
+alert_drawdown: 0.25     # 从高点回撤超过 25% 时在日志里提醒（不会自动卖出）
+require_market_open: true   # 只在美股常规交易时段下单
+
+log_dir: logs
+
+# ---- 对照策略：每个策略各有一个虚拟的 2000 美元账户，不下单，只记录价值用来比较 ----
+# 结果写在 logs/strategies.csv。策略说明见 autoinvest/strategies.py 和 README。
+shadows:
+  stock: US.SCHB         # 对照策略用的股票 ETF
+  bond: US.SCHZ          # 对照策略用的债券 ETF
+  band: 0.05             # 偏离目标超过 5 个百分点才调仓
+  history_days: 300      # 计算均线、动量、波动率用的日 K 线天数
+  benchmark: fixed_60_40 # 日志里 benchmark_value 用哪个策略
+  strategies:
+    - fixed_100          # 100% 股票
+    - fixed_80_20
+    - fixed_60_40
+    - fixed_50_50
+    - trend_100          # 均线上方全仓股票，下方全仓债券
+    - trend_80_30        # 均线上方 80% 股票，下方 30%
+    - dual_momentum      # 过去一年股票跑赢债券就全仓股票
+    - vol_target         # 把波动控制在约 10%
+    - risk_parity        # 按波动倒数分配
+
+# ---- Claude 每日动态调整（打开前先建好 GitHub 私有仓库，见 README）----
+signal:
+  enabled: true         # 改成 true：目标比例改用 Claude 每天写的 signals/latest.json
+  path: signals/latest.json
+  git_sync: true         # 执行前 git pull 拿 Claude 的指令，执行后把 data/status.json 推回去
+  groups:                # 白名单：Claude 只能在这些 ETF 里分配
+    stock:
+      - US.SCHB          # 美国全市场股票
+      - US.SCHF          # 发达市场（美国以外）股票
+    bond:
+      - US.SCHZ          # 美国综合债券
+      - US.SCHO          # 美国短期国债（接近现金）
+  stock_min: 0.40        # 股票合计最低 40%
+  stock_max: 0.75        # 股票合计最高 75%
+  max_daily_change: 0.10 # 股票合计、单个 ETF，每天最多变动 10 个百分点
+  max_age_days: 3        # 指令超过 3 天没更新就作废，沿用上一次的目标
+  history_days: 120      # 回传给 Claude 的日 K 线天数
