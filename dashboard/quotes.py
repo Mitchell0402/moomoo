@@ -67,7 +67,6 @@ class OpenDFeed(Feed):
         self.ctx = None
         self.subscribed = False
         self._stop = threading.Event()
-        self._spy_day = None
         self._last_kline = 0.0
         self._day_bars: dict = {}
         self._thread = threading.Thread(target=self._run, name="quotes", daemon=True)
@@ -150,15 +149,31 @@ class OpenDFeed(Feed):
         if time.monotonic() - self._last_kline > 55 or not bars:
             bars = self._klines(qdate) or bars
             self._last_kline = time.monotonic()
-        spy_daily = snap["spy_daily"]
-        if self._spy_day != now.date() or not spy_daily:
-            spy_daily = self._spy_history() or spy_daily
-            # 收盘后再取一次，把今天的收盘价也拿到
-            self._spy_day = now.date() if phase in ("post", "closed") or not spy_daily else None
+        spy_daily = self._refresh_spy(snap["spy_daily"], now, phase)
         self._set(status="live", message="", quotes=quotes, bars=bars, samples=samples[-800:],
                   spy_daily=spy_daily, market_state=market_state, quote_date=qdate,
                   updated_at=now.isoformat(timespec="seconds"), source="opend")
         return 15 if phase == "open" else 300
+
+    # 标普日线：启动后取一次，收盘后再取一次拿到今天的收盘价；取不到时 5 分钟后再试，不是每 15 秒试一次
+    _spy_loaded = None
+    _spy_closed = None
+    _spy_retry = 0.0
+
+    def _refresh_spy(self, spy_daily: list, now, phase: str) -> list:
+        today = now.date()
+        closed = phase in ("post", "closed")
+        need = not spy_daily or self._spy_loaded != today or (closed and self._spy_closed != today)
+        if not need or time.monotonic() < self._spy_retry:
+            return spy_daily
+        got = self._spy_history()
+        if not got:
+            self._spy_retry = time.monotonic() + 300
+            return spy_daily
+        self._spy_loaded = today
+        if closed:
+            self._spy_closed = today
+        return got
 
     def _klines(self, qdate: str) -> dict:
         from moomoo import RET_OK, KLType, SubType

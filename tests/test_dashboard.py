@@ -235,3 +235,27 @@ def test_real_env_does_not_fall_back_to_paper_backup_logs(folder):
     write(folder / "backup" / "logs" / "run-20261008-103000.json",
           run("2026-10-08T10:30:00", {"US.SCHB": 99}, 1.0, {"US.SCHB": 30.0}))
     assert data.Files(folder).run_records("logs/real") == []
+
+
+def test_spy_daily_fetched_once_while_open_and_once_after_close(monkeypatch):
+    feed = quotes.OpenDFeed.__new__(quotes.OpenDFeed)
+    calls = []
+    monkeypatch.setattr(feed, "_spy_history", lambda: calls.append(1) or [("2026-10-08", 600.0)])
+    day = dt.datetime(2026, 10, 9, 11, 0)
+    daily = []
+    for _ in range(3):
+        daily = feed._refresh_spy(daily, day, "open")
+    assert len(calls) == 1
+    for _ in range(2):
+        daily = feed._refresh_spy(daily, day.replace(hour=17), "post")
+    assert len(calls) == 2
+
+
+def test_spy_daily_empty_response_backs_off(monkeypatch):
+    feed = quotes.OpenDFeed.__new__(quotes.OpenDFeed)
+    calls = []
+    monkeypatch.setattr(feed, "_spy_history", lambda: calls.append(1) or [])
+    day = dt.datetime(2026, 10, 9, 11, 0)
+    for _ in range(4):
+        feed._refresh_spy([], day, "open")
+    assert len(calls) == 1
