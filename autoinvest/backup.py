@@ -15,17 +15,25 @@ import sys
 from pathlib import Path
 
 TASK_NAME = "moomoo-autoinvest"
-SECRET_KEY = re.compile(r"pass|pwd|secret|token|unlock|cookie", re.I)
-LINE = re.compile(r"^(\s*)([A-Za-z0-9_.-]+)(\s*):(\s*)(\S.*)$")
+SECRET_KEY = re.compile(r"pass|pwd|secret|token|unlock|cookie|api[_-]?key|private", re.I)
+LINE = re.compile(r"""^(\s*)(?:-\s+)?["']?([A-Za-z0-9_.-]+)["']?\s*:""")
 
 
 def sanitize(text: str) -> str:
-    """密码、口令一类的字段清空，其余原样保留。"""
-    out = []
+    """密码、口令一类的字段清空，其余原样保留（注释也保留）。
+    键名带引号、值写成多行（| 或 >）或缩进的列表时，后面缩进更深的行也一起清掉。"""
+    out, skip_indent = [], None
     for line in text.splitlines():
+        indent = len(line) - len(line.lstrip())
+        if skip_indent is not None:
+            if not line.strip() or indent > skip_indent:
+                continue
+            skip_indent = None
         m = LINE.match(line)
         if m and SECRET_KEY.search(m.group(2)) and not line.lstrip().startswith("#"):
-            line = f'{m.group(1)}{m.group(2)}: ""  # 备份时已清空，恢复后手动填'
+            out.append(f'{m.group(1)}{m.group(2)}: ""  # 备份时已清空，恢复后手动填')
+            skip_indent = len(m.group(1))
+            continue
         out.append(line)
     return "\n".join(out) + "\n"
 

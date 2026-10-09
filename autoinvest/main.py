@@ -64,8 +64,13 @@ def _is_number(x) -> bool:
 
 def write_log(log_dir: Path, record: dict):
     log_dir.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    (log_dir / f"run-{stamp}.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 同一秒内的两次运行（手动连跑）也不能互相覆盖：时间戳到微秒，仍重名就在末尾加序号
+    now = dt.datetime.now()
+    stamp = f"{now.strftime('%Y%m%d-%H%M%S')}{now.microsecond:06d}"
+    n = 0
+    while (log_dir / f"run-{stamp}-{n}.json").exists():
+        n += 1
+    (log_dir / f"run-{stamp}-{n}.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     summary = log_dir / "summary.csv"
     new = not summary.exists()
     with summary.open("a", encoding="utf-8") as f:

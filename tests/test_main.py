@@ -704,3 +704,14 @@ def test_paper_env_keeps_logs_dir(sandbox):
     run(sandbox)
     assert list((sandbox / "logs").glob("run-*.json"))
     assert not (sandbox / "logs" / "real").exists()
+
+
+def test_two_runs_in_the_same_second_keep_both_logs(sandbox, monkeypatch):
+    class Frozen(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 12, 10, 30, 0)
+    monkeypatch.setattr(m.dt, "datetime", Frozen)
+    run(sandbox)
+    run(sandbox)
+    assert len(list((sandbox / "logs").glob("run-*.json"))) == 2

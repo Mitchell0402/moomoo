@@ -52,3 +52,12 @@ def test_real_logs_are_ignored_in_logs_but_not_in_backup():
     p = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "backup/logs/real/run-1.json"],
                        capture_output=True, text=True)
     assert p.stdout.strip() == ""
+
+
+def test_sanitize_multiline_quoted_and_nested_secrets():
+    text = ('acc_id: 123\npassword: |\n  line one\n  line two\nnext_key: 5\n"token": "abc"\n'
+            "'api_key': def\nunlock_pwd:\n  - a\n  - b\nbudget_usd: 2000\n")
+    out = sanitize(text)
+    for leaked in ("line one", "line two", "abc", "def", "- a", "- b"):
+        assert leaked not in out
+    assert "acc_id: 123" in out and "next_key: 5" in out and "budget_usd: 2000" in out
