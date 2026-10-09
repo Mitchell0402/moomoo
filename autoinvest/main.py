@@ -10,6 +10,8 @@ config.yaml 里 signal.enabled 为 true 时，目标比例来自 Claude 每天�
 from __future__ import annotations
 
 import argparse
+import contextlib
+import copy
 import datetime as dt
 import json
 import math
@@ -176,6 +178,23 @@ def safe_prices(broker, codes: list[str], notes: list[str]) -> dict:
         return out
 
 
+SHADOW_KEYS = ("shadows", "portfolios", "shadow_day")
+
+
+@contextlib.contextmanager
+def shadow_guard(state: dict, record: dict):
+    """对照策略只是用来比较的实验。里面出任何错，都只记一条警告并把对照部分的状态恢复原样，
+    不能让它影响实际账户的记账和状态保存。"""
+    snap = copy.deepcopy({k: state[k] for k in SHADOW_KEYS if k in state})
+    try:
+        yield
+    except Exception as e:  # noqa: BLE001
+        for k in SHADOW_KEYS:
+            state.pop(k, None)
+        state.update(snap)
+        record["notes"].append(f"警告：对照组合这次出错，不影响实际账户：{type(e).__name__}: {e}")
+
+
 def run_portfolios(broker, state: dict, budget: float, today: str, band: float, rebalance_today: bool,
                    record: dict) -> dict:
     """更多对照组合（见 portfolios.py）：Claude 选股、行业轮动、固定组合。出错只记备注，不影响实际账户。"""
@@ -226,6 +245,14 @@ def ledger_mode(cfg: dict) -> str:
 
 
 FILLED = "FILLED_ALL"
+
+
+def stop_requested() -> str | None:
+    """本地 STOP 文件或远程急停 signals/HALT 是否存在。下每一笔单之前都再查一次，不只在运行开始时查。"""
+    for name, path in (("STOP", ROOT / "STOP"), ("HALT", ROOT / "signals" / "HALT")):
+        if path.exists():
+            return name
+    return None
 
 
 def wait_filled(broker, order_ids: list[str], timeout: float, interval: float = 5) -> bool:
@@ -431,13 +458,19 @@ def _main(args):
         record["targets"] = targets
 
         # 每日上限是一天的总额：扣掉今天前几次运行已经成交和还挂着的金额
+        power = buying_power(funds)
+        power_bad = power <= 0 < account_cash
+        if power_bad:
+            # 现金有但可用资金字段是 0：多半是 SDK 对这个账户报的字段不对。不能让买单悄悄变成 0 股还当作正常运行
+            record["notes"].append(f"错误：账户现金 {account_cash:.2f} 美元，但可用资金字段是 {power:.2f}"
+                                   f"（{funds}），本次不下单，请检查账户类型和资金字段")
         daily_used = used_today(ours, today)
         record["daily_used"] = round(daily_used, 2)
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
             max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used),
-            account_cash=buying_power(funds))
+            account_cash=power)
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
@@ -456,6 +489,10 @@ def _main(args):
                 record["notes"].append(f"警告：{c} 实际持仓 {actual.get(c, 0)} 少于程序记录 {ledger.holdings[c]}，本次不下单")
                 plan.orders = []
                 mismatch = True
+
+        if power_bad:
+            plan.orders = []
+            mismatch = True
 
         pending = [o for o in ours if o.get("order_status") in OPEN_ORDER_STATUSES]
         # 当天只卖不买的情况（卖单没及时成交、买单留到下次）允许当天再跑一次把买单补上
@@ -482,6 +519,9 @@ def _main(args):
                 buys = [o for o in plan.orders if o.side == "BUY"]
                 sell_ids = []
                 for o in sells:
+                    if stopped := stop_requested():
+                        record["notes"].append(f"{stopped} 已打开，后面的单不再下（已经下的单不会撤销）")
+                        break
                     oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                     sell_ids.append(oid)
                     record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
@@ -496,6 +536,9 @@ def _main(args):
                         record["funds_after_sells"] = funds_after
                         buys = cap_buys(buys, buying_power(funds_after), record["notes"])
                     for o in buys:
+                        if stopped := stop_requested():
+                            record["notes"].append(f"{stopped} 已打开，后面的单不再下（已经下的单不会撤销）")
+                            break
                         oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                         record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
                                                  "qty": o.qty, "price": o.price})
@@ -507,28 +550,30 @@ def _main(args):
                 # 一天可能运行好几次，对照账户每天只在第一次调仓
                 rebalance_today = state.get("shadow_day") != today
                 if sh_cfg.get("strategies") and state.get("shadow_day") != today:
-                    update_shadows(state, sh_cfg, closes, prices, cfg["budget_usd"], today)
-                    if base is not None:
-                        update_baseline_shadow(state, base, prices, cfg["budget_usd"],
-                                               sh_cfg.get("band", 0.05), today)
-                    state["shadow_day"] = today
+                    with shadow_guard(state, record):
+                        update_shadows(state, sh_cfg, closes, prices, cfg["budget_usd"], today)
+                        if base is not None:
+                            update_baseline_shadow(state, base, prices, cfg["budget_usd"],
+                                                   sh_cfg.get("band", 0.05), today)
+                        state["shadow_day"] = today
             if sh_cfg.get("strategies") and state.get("shadows"):
-                # 每次运行都按现价重新估值（不调仓），收盘后那次就是收盘价
-                kinds = list(sh_cfg["strategies"]) + (["baseline"] if base is not None else [])
-                values = value_shadows(state, sh_cfg, prices, kinds)
-                if sh_cfg.get("intraday", True):
-                    try:
-                        bars = broker.daily_bars(sh_cfg["stock"], 30)
-                        values["intraday"] = update_intraday_shadow(
-                            state, bars, prices[sh_cfg["stock"]], cfg["budget_usd"], today,
-                            float(sh_cfg.get("intraday_cost", 0.0005)))
-                    except BrokerError as e:
-                        record["notes"].append(f"日内对照这次没有更新：{e}")
-                if sh_cfg.get("portfolios", True):
-                    values.update(run_portfolios(broker, state, cfg["budget_usd"], today,
-                                                 float(sh_cfg.get("band", 0.05)), rebalance_today, record))
-                record["strategies"] = values
-                record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
+                with shadow_guard(state, record):
+                    # 每次运行都按现价重新估值（不调仓），收盘后那次就是收盘价
+                    kinds = list(sh_cfg["strategies"]) + (["baseline"] if base is not None else [])
+                    values = value_shadows(state, sh_cfg, prices, kinds)
+                    if sh_cfg.get("intraday", True):
+                        try:
+                            bars = broker.daily_bars(sh_cfg["stock"], 30)
+                            values["intraday"] = update_intraday_shadow(
+                                state, bars, prices[sh_cfg["stock"]], cfg["budget_usd"], today,
+                                float(sh_cfg.get("intraday_cost", 0.0005)))
+                        except BrokerError as e:
+                            record["notes"].append(f"日内对照这次没有更新：{e}")
+                    if sh_cfg.get("portfolios", True):
+                        values.update(run_portfolios(broker, state, cfg["budget_usd"], today,
+                                                     float(sh_cfg.get("band", 0.05)), rebalance_today, record))
+                    record["strategies"] = values
+                    record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
             record["planned_orders"] = [{"code": o.code, "side": o.side, "qty": o.qty, "price": o.price}
                                         for o in plan.orders]

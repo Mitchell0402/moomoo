@@ -634,3 +634,57 @@ def test_buying_power_uses_smallest_known_field(sandbox):
                              "total_assets": 2000.0}]
     run(sandbox, "--execute")
     assert sum(q * p for _, s, q, p, _ in FakeBroker.placed if s == "BUY") <= 50
+
+
+def test_shadow_crash_still_saves_state(sandbox, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+    monkeypatch.setattr(m, "run_portfolios", boom)
+    assert run(sandbox, "--execute") == 0
+    assert len(FakeBroker.placed) == 2
+    state = json.loads((sandbox / "state.json").read_text(encoding="utf-8"))
+    assert state["targets"]
+    assert any(n.startswith("警告") and "boom" in n for n in last_log(sandbox)["notes"])
+
+
+def test_bad_pick_file_does_not_touch_real_account(sandbox):
+    (sandbox / "signals").mkdir()
+    (sandbox / "signals" / "shadows.json").write_text("[]", encoding="utf-8")
+    assert run(sandbox, "--execute") == 0
+    assert len(FakeBroker.placed) == 2
+    assert (sandbox / "state.json").exists()
+
+
+def test_stop_during_sell_wait_blocks_buys(sandbox, monkeypatch):
+    FakeBroker.orders = held_orders(70, 10)   # 先卖 SCHB 再买 SCHZ
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+
+    def stop_while_waiting(broker, ids, timeout, interval=5):
+        (sandbox / "STOP").touch()
+        return True
+    monkeypatch.setattr(m, "wait_filled", stop_while_waiting)
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
+    assert any("STOP" in n and "不再下" in n for n in last_log(sandbox)["notes"])
+
+
+def test_halt_file_blocks_orders_placed_after_start(sandbox, monkeypatch):
+    FakeBroker.orders = held_orders(70, 10)
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+
+    def halt_while_waiting(broker, ids, timeout, interval=5):
+        (sandbox / "signals").mkdir(exist_ok=True)
+        (sandbox / "signals" / "HALT").touch()
+        return True
+    monkeypatch.setattr(m, "wait_filled", halt_while_waiting)
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
+
+
+def test_zero_buying_power_is_reported_as_error(sandbox):
+    # SDK 把不支持的资金字段报成 0 而不是 N/A 时，买单会被悄悄削成 0：要在日志里报"错误"，不能当作正常运行
+    FakeBroker.funds_seq = [{"cash": 2000.0, "us_cash": 0.0, "usd_net_cash_power": 0.0, "power": 0.0,
+                             "total_assets": 2000.0}]
+    assert run(sandbox, "--execute") == 1
+    assert FakeBroker.placed == []
+    assert any(n.startswith("错误") and "可用资金" in n for n in last_log(sandbox)["notes"])

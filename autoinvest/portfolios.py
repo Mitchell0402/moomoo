@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -64,7 +65,7 @@ def validate_picks(kind: str, targets) -> list[str]:
         return ["没有 targets"]
     errors = []
     for c, w in targets.items():
-        if not isinstance(w, (int, float)) or w <= 0:
+        if not isinstance(w, (int, float)) or isinstance(w, bool) or not math.isfinite(w) or w <= 0:
             errors.append(f"{c} 的权重 {w} 无效")
         elif kind.startswith("claude_stocks") and (not STOCK_CODE.match(str(c)) or c in SECTORS):
             errors.append(f"{c} 不是有效的美股代码")
@@ -96,6 +97,9 @@ def load_picks(folder: Path) -> tuple[dict, list[str]]:
             continue
         except json.JSONDecodeError as e:
             notes.append(f"选股对照指令 {fname} 格式错误：{e}")
+            continue
+        if not isinstance(data, dict):
+            notes.append(f"选股对照指令 {fname} 的内容不是一个对象")
             continue
         date = str(data.get("date", ""))
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):

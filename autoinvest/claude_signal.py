@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import math
 from pathlib import Path
 
 
@@ -31,6 +32,8 @@ def load_signal(path: Path, today: dt.date, max_age_days: int) -> tuple[dict | N
         return None, "没有找到 Claude 的指令文件"
     except json.JSONDecodeError as e:
         return None, f"指令文件格式错误：{e}"
+    if not isinstance(sig, dict):
+        return None, "指令文件的内容不是一个对象"
     try:
         date = dt.date.fromisoformat(str(sig["date"]))
     except (KeyError, ValueError):
@@ -50,7 +53,7 @@ def validate(targets: dict, sig_cfg: dict, prev: dict, allowed_ranges: dict | No
     for c, w in targets.items():
         if c not in allowed:
             errors.append(f"{c} 不在白名单里")
-        elif not isinstance(w, (int, float)) or w < 0:
+        elif not isinstance(w, (int, float)) or isinstance(w, bool) or not math.isfinite(w) or w < 0:
             errors.append(f"{c} 的权重 {w} 无效")
     if errors:
         return errors

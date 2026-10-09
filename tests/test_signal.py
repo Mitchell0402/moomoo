@@ -56,3 +56,18 @@ def test_stale_or_missing_signal_keeps_previous(tmp_path):
     assert sig is None and "过期" in notes[0]
     targets, notes, sig = resolve_targets(tmp_path / "nope.json", TODAY, CFG, PREV)
     assert sig is None and targets["US.SCHB"] == 0.6
+
+
+def test_non_object_signal_falls_back(tmp_path):
+    for body in ("[]", "null", '"x"'):
+        p = tmp_path / "latest.json"
+        p.write_text(body, encoding="utf-8")
+        targets, notes, sig = resolve_targets(p, TODAY, CFG, PREV)
+        assert sig is None
+        assert targets["US.SCHB"] == 0.6 and "不是" in notes[0]
+
+
+def test_rejects_bool_and_nan_weights():
+    assert validate({"US.SCHB": True, "US.SCHZ": 0.4}, CFG, PREV)
+    assert validate({"US.SCHB": float("nan"), "US.SCHZ": 0.4}, CFG, PREV)
+    assert validate({"US.SCHB": float("inf"), "US.SCHZ": 0.4}, CFG, PREV)
