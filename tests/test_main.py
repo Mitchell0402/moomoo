@@ -634,3 +634,22 @@ def test_buying_power_uses_smallest_known_field(sandbox):
                              "total_assets": 2000.0}]
     run(sandbox, "--execute")
     assert sum(q * p for _, s, q, p, _ in FakeBroker.placed if s == "BUY") <= 50
+
+
+def test_shadow_crash_still_saves_state(sandbox, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+    monkeypatch.setattr(m, "run_portfolios", boom)
+    assert run(sandbox, "--execute") == 0
+    assert len(FakeBroker.placed) == 2
+    state = json.loads((sandbox / "state.json").read_text(encoding="utf-8"))
+    assert state["targets"]
+    assert any(n.startswith("警告") and "boom" in n for n in last_log(sandbox)["notes"])
+
+
+def test_bad_pick_file_does_not_touch_real_account(sandbox):
+    (sandbox / "signals").mkdir()
+    (sandbox / "signals" / "shadows.json").write_text("[]", encoding="utf-8")
+    assert run(sandbox, "--execute") == 0
+    assert len(FakeBroker.placed) == 2
+    assert (sandbox / "state.json").exists()

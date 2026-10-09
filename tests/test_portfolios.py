@@ -106,3 +106,18 @@ def test_sector_momentum_rebalances_once_a_month():
     h = pf.holdings(state, prices)
     assert h["sector_momentum"]["since"] == "2026-10" and abs(h["sector_momentum"]["weights"]["US.XLE"] - 1 / 3) < 1e-3
     assert "nasdaq_100" not in h
+
+
+def test_load_picks_skips_non_object_files(tmp_path):
+    (tmp_path / "shadows.json").write_text("[]", encoding="utf-8")
+    picks, notes = pf.load_picks(tmp_path)
+    assert picks == {} and len(notes) == 1
+
+
+def test_load_picks_skips_string_and_bool_weights(tmp_path):
+    targets = {"US.JPM": "0.15", "US.GOOGL": 0.15, "US.XOM": 0.15, "US.LLY": 0.15, "US.MSFT": 0.15,
+               "US.RTX": True}
+    (tmp_path / "shadows.json").write_text(json.dumps({"date": "2026-10-09", "claude_stocks": {"targets": targets}}),
+                                           encoding="utf-8")
+    picks, notes = pf.load_picks(tmp_path)
+    assert "claude_stocks" not in picks and notes
