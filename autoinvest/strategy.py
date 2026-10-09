@@ -64,6 +64,29 @@ def build_ledger(budget: float, orders: list[dict], remark: str, codes: list[str
     return Ledger(cash=cash, holdings=holdings)
 
 
+def buying_power(funds: dict) -> float:
+    """没有融资时能拿来买入的钱：现金、美元现金、美元净现金购买力里取已知的最小值。"""
+    from .broker import BrokerError
+
+    known = [funds[k] for k in ("cash", "us_cash", "usd_net_cash_power") if funds.get(k) is not None]
+    if not known:
+        raise BrokerError("查不到账户可用资金")
+    return min(known)
+
+
+def cap_buys(buys: list[Order], power: float, notes: list[str]) -> list[Order]:
+    """买单总额不超过 power：超出的那笔减少股数，之后买不起一股的去掉，每次削减都写进备注。"""
+    out, left = [], power
+    for o in buys:
+        qty = min(o.qty, max(0, math.floor(left / o.price)))
+        if qty < o.qty:
+            notes.append(f"{o.code} 计划买 {o.qty} 股，可用资金 {left:.2f} 美元只够 {qty} 股")
+        if qty > 0:
+            out.append(Order(o.code, o.side, qty, o.price))
+            left -= qty * o.price
+    return out
+
+
 def used_today(orders: list[dict], today: str) -> float:
     """今天已经用掉的每日额度：已成交的金额，加上还没成交完的委托占着的金额。"""
     from .broker import OPEN_ORDER_STATUSES

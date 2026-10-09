@@ -1,6 +1,7 @@
 import pytest
 
-from autoinvest.strategy import Ledger, build_ledger, limit_price, plan_rebalance
+from autoinvest.broker import BrokerError
+from autoinvest.strategy import Ledger, Order, build_ledger, buying_power, cap_buys, limit_price, plan_rebalance
 
 TARGETS = {"US.SCHB": 0.6, "US.SCHZ": 0.4}
 KW = dict(band=0.05, cash_buffer=0.02, slippage=0.002, max_order_value=1500, max_daily_value=2500)
@@ -100,3 +101,25 @@ def test_used_today_counts_fills_and_open_orders():
          "dealt_qty": 0, "dealt_avg_price": 0},
     ]
     assert used_today(orders, "2026-10-09") == pytest.approx(673.85)
+
+
+def test_buying_power_takes_smallest_known_field():
+    f = {"cash": 2000, "us_cash": 100, "usd_net_cash_power": 50, "power": 4000, "total_assets": 2000}
+    assert buying_power(f) == 50
+    assert buying_power({**f, "us_cash": None, "usd_net_cash_power": None}) == 2000
+    with pytest.raises(BrokerError):
+        buying_power({"cash": None, "us_cash": None, "usd_net_cash_power": None})
+
+
+def test_cap_buys_trims_to_power():
+    notes = []
+    buys = [Order("A", "BUY", 47, 25.05), Order("B", "BUY", 34, 23.05)]
+    out = cap_buys(buys, 990.0, notes)
+    assert [(o.code, o.qty) for o in out] == [("A", 39)]
+    assert len(notes) == 2
+
+
+def test_cap_buys_leaves_affordable_orders_alone():
+    notes = []
+    buys = [Order("A", "BUY", 10, 25.0)]
+    assert cap_buys(buys, 1000.0, notes) == buys and notes == []

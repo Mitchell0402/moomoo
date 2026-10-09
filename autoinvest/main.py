@@ -28,7 +28,7 @@ from .runlock import LockBusy, other_host, run_lock
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .statefile import StateError, load_state, save_state
-from .strategy import Ledger, build_ledger, plan_rebalance, used_today
+from .strategy import Ledger, buying_power, build_ledger, cap_buys, plan_rebalance, used_today
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -365,7 +365,11 @@ def _main(args):
         orders = broker.orders_since(dt.date.fromisoformat(str(cfg["start_date"])))
         ours = [o for o in orders if o.get("remark") == remark]
         prices = broker.prices(codes)
-        account_cash = broker.account_cash()
+        funds = broker.funds()
+        if funds.get("cash") is None:
+            raise BrokerError("查不到账户现金（cash）")
+        account_cash = funds["cash"]
+        record["funds"] = funds
         mode_ledger = ledger_mode(cfg)
         record["ledger_mode"] = mode_ledger
         if mode_ledger == "account":
@@ -432,7 +436,8 @@ def _main(args):
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
-            max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used), account_cash=account_cash)
+            max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used),
+            account_cash=buying_power(funds))
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
@@ -485,6 +490,11 @@ def _main(args):
                 if buys and sell_ids and not wait_filled(broker, sell_ids, timeout):
                     record["notes"].append(f"卖单 {timeout:.0f} 秒内没有全部成交，买单留到下一次运行")
                 else:
+                    if sell_ids:
+                        # 卖单成交后重新查一次资金，买单不超过这时真正能用的钱
+                        funds_after = broker.funds()
+                        record["funds_after_sells"] = funds_after
+                        buys = cap_buys(buys, buying_power(funds_after), record["notes"])
                     for o in buys:
                         oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                         record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,

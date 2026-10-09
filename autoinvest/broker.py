@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import math
 import socket
 
 # 美股常规交易时段在 moomoo 里显示为这些状态
@@ -9,8 +10,20 @@ OPEN_STATES = {"MORNING", "AFTERNOON"}
 OPEN_ORDER_STATUSES = {"WAITING_SUBMIT", "SUBMITTING", "SUBMITTED", "FILLED_PART"}
 
 
+FUND_FIELDS = ("cash", "us_cash", "usd_net_cash_power", "power", "total_assets")
+
+
 class BrokerError(RuntimeError):
     pass
+
+
+def _num(x) -> float | None:
+    """SDK 对没有的字段返回 'N/A' 之类的字符串；不是有限的数字就当作没有。"""
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
 
 
 class MoomooBroker:
@@ -81,10 +94,12 @@ class MoomooBroker:
         df = self._check(ret, df, f"查询 {code} 日 K 线")
         return [[str(t)[:10], float(o), float(c)] for t, o, c in zip(df["time_key"], df["open"], df["close"])][-days:]
 
-    def account_cash(self) -> float:
+    def funds(self) -> dict:
+        """账户资金的几个口径。现金、美元现金、美元净现金购买力不是同一个数，取不到的字段是 None。"""
         df = self._check(*self.trade.accinfo_query(trd_env=self.env, acc_id=self.acc_id, currency="USD"),
                          "查询资金")
-        return float(df.iloc[0]["cash"])
+        row = df.iloc[0]
+        return {k: _num(row[k]) if k in row else None for k in FUND_FIELDS}
 
     def positions(self) -> dict[str, float]:
         df = self._check(*self.trade.position_list_query(trd_env=self.env, acc_id=self.acc_id),

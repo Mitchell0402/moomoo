@@ -23,6 +23,7 @@ class FakeBroker:
     cash = 1_000_000.0
     fill = "FILLED_ALL"
     price_override = {}
+    funds_seq = []
 
     env = None
 
@@ -54,8 +55,13 @@ class FakeBroker:
             raise m.BrokerError("K 线查询失败")
         return list(FakeBroker.bars)
 
-    def account_cash(self):
-        return FakeBroker.cash
+    def funds(self):
+        if len(FakeBroker.funds_seq) > 1:
+            return FakeBroker.funds_seq.pop(0)
+        if FakeBroker.funds_seq:
+            return FakeBroker.funds_seq[0]
+        c = FakeBroker.cash
+        return {"cash": c, "us_cash": c, "usd_net_cash_power": c, "power": c, "total_assets": c}
 
     def positions(self):
         return dict(FakeBroker.held)
@@ -83,7 +89,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "MoomooBroker", FakeBroker)
     FakeBroker.placed, FakeBroker.orders, FakeBroker.state, FakeBroker.env = [], [], "MORNING", None
     FakeBroker.closes, FakeBroker.held, FakeBroker.cash, FakeBroker.fill = None, {}, 1_000_000.0, "FILLED_ALL"
-    FakeBroker.price_override = {}
+    FakeBroker.price_override, FakeBroker.funds_seq = {}, []
     FakeBroker.bars, FakeBroker.bars_error = [], False
     return root
 
@@ -605,3 +611,26 @@ def test_same_pc_status_does_not_block(sandbox, monkeypatch):
     monkeypatch.setattr(m.socket, "gethostname", lambda: "NEW-PC")
     assert run(sandbox, "--execute") == 0
     assert FakeBroker.placed
+
+
+def test_run_log_records_all_fund_fields(sandbox):
+    run(sandbox, "--execute")
+    assert set(last_log(sandbox)["funds"]) == {"cash", "us_cash", "usd_net_cash_power", "power", "total_assets"}
+
+
+def test_buys_rechecked_after_sells_fill(sandbox):
+    FakeBroker.orders = held_orders(70, 10)
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+    big = {"cash": 1e6, "us_cash": 1e6, "usd_net_cash_power": 1e6, "power": 1e6, "total_assets": 1e6}
+    FakeBroker.funds_seq = [big, {**big, "usd_net_cash_power": 100.0}]  # 卖单成交后可用资金只有 100
+    run(sandbox, "--execute")
+    buys = [(q, p) for _, s, q, p, _ in FakeBroker.placed if s == "BUY"]
+    assert sum(q * p for q, p in buys) <= 100
+    assert any("可用资金" in n for n in last_log(sandbox)["notes"])
+
+
+def test_buying_power_uses_smallest_known_field(sandbox):
+    FakeBroker.funds_seq = [{"cash": 2000.0, "us_cash": 100.0, "usd_net_cash_power": 50.0, "power": 4000.0,
+                             "total_assets": 2000.0}]
+    run(sandbox, "--execute")
+    assert sum(q * p for _, s, q, p, _ in FakeBroker.placed if s == "BUY") <= 50
