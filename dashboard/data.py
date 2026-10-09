@@ -13,6 +13,7 @@ import csv
 import datetime as dt
 import io
 import json
+import re
 from pathlib import Path
 
 import yaml
@@ -27,6 +28,7 @@ NAMES = {
     "US.SPY": "标普 500", "US.QQQ": "纳斯达克 100", "US.DIA": "道琼斯工业", "US.IWM": "罗素 2000",
     "US.TLT": "20 年以上美债", "US.GLD": "黄金", "US.USO": "原油", "US.UUP": "美元指数",
 }
+DATE_FILE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 GROUP_LABELS = {"stock": "股票", "bond": "债券", "gold": "黄金", "cash": "现金"}
 DEFAULT_GROUPS = {"stock": ["US.SCHB", "US.SCHF"], "bond": ["US.SCHZ", "US.SCHO"], "gold": ["US.GLDM"]}
 
@@ -143,10 +145,14 @@ class Files:
         return out
 
     def signals(self) -> dict[str, dict]:
+        """Claude 每天的主交易计划。只认 latest.json 和 YYYY-MM-DD.json，并且要有 targets；
+        shadows.json 这类选股对照文件有自己的格式，不能当成主计划。"""
         out = {}
         for f in sorted((self.root / "signals").glob("*.json")):
+            if f.stem != "latest" and not DATE_FILE.match(f.stem):
+                continue
             sig = self._read(f, json.loads)
-            if isinstance(sig, dict) and sig.get("date"):
+            if isinstance(sig, dict) and sig.get("date") and isinstance(sig.get("targets"), dict):
                 if f.stem == "latest":
                     out.setdefault(str(sig["date"]), sig)
                 else:

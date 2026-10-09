@@ -216,3 +216,15 @@ def test_real_env_reads_only_real_logs(folder):
     write(folder / "config.yaml", cfg)
     d = data.assemble(folder, data.Files(folder), quotes.OfflineFeed("").snapshot(), {}, NOW)
     assert d["account"]["value"] == pytest.approx(2000.0)
+
+
+def test_shadow_pick_files_do_not_replace_plan(tmp_path):
+    day = "2026-10-09"
+    write(tmp_path / "signals" / f"{day}.json", {"date": day, "targets": {"US.SCHB": 0.7}, "rationale": "主计划"})
+    write(tmp_path / "signals" / "latest.json", {"date": day, "targets": {"US.SCHB": 0.7}, "rationale": "主计划"})
+    write(tmp_path / "signals" / "shadows.json", {"date": day, "claude_stocks": {"targets": {"US.JPM": 0.2}}})
+    write(tmp_path / "signals" / "shadows-daily.json", {"date": day, "claude_stocks_daily": {"targets": {}}})
+    write(tmp_path / "signals" / "notes.json", {"date": "2026-10-10", "targets": "oops"})
+    sigs = data.Files(tmp_path).signals()
+    assert list(sigs) == [day]
+    assert sigs[day]["targets"] == {"US.SCHB": 0.7} and "claude_stocks" not in sigs[day]
