@@ -247,6 +247,14 @@ def ledger_mode(cfg: dict) -> str:
 FILLED = "FILLED_ALL"
 
 
+def stop_requested() -> str | None:
+    """本地 STOP 文件或远程急停 signals/HALT 是否存在。下每一笔单之前都再查一次，不只在运行开始时查。"""
+    for name, path in (("STOP", ROOT / "STOP"), ("HALT", ROOT / "signals" / "HALT")):
+        if path.exists():
+            return name
+    return None
+
+
 def wait_filled(broker, order_ids: list[str], timeout: float, interval: float = 5) -> bool:
     """等卖单全部成交。超时、或订单被撤销/失败，返回 False。"""
     deadline = time.monotonic() + timeout
@@ -501,6 +509,9 @@ def _main(args):
                 buys = [o for o in plan.orders if o.side == "BUY"]
                 sell_ids = []
                 for o in sells:
+                    if stopped := stop_requested():
+                        record["notes"].append(f"{stopped} 已打开，后面的单不再下（已经下的单不会撤销）")
+                        break
                     oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                     sell_ids.append(oid)
                     record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
@@ -515,6 +526,9 @@ def _main(args):
                         record["funds_after_sells"] = funds_after
                         buys = cap_buys(buys, buying_power(funds_after), record["notes"])
                     for o in buys:
+                        if stopped := stop_requested():
+                            record["notes"].append(f"{stopped} 已打开，后面的单不再下（已经下的单不会撤销）")
+                            break
                         oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                         record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
                                                  "qty": o.qty, "price": o.price})

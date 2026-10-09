@@ -653,3 +653,29 @@ def test_bad_pick_file_does_not_touch_real_account(sandbox):
     assert run(sandbox, "--execute") == 0
     assert len(FakeBroker.placed) == 2
     assert (sandbox / "state.json").exists()
+
+
+def test_stop_during_sell_wait_blocks_buys(sandbox, monkeypatch):
+    FakeBroker.orders = held_orders(70, 10)   # 先卖 SCHB 再买 SCHZ
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+
+    def stop_while_waiting(broker, ids, timeout, interval=5):
+        (sandbox / "STOP").touch()
+        return True
+    monkeypatch.setattr(m, "wait_filled", stop_while_waiting)
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
+    assert any("STOP" in n and "不再下" in n for n in last_log(sandbox)["notes"])
+
+
+def test_halt_file_blocks_orders_placed_after_start(sandbox, monkeypatch):
+    FakeBroker.orders = held_orders(70, 10)
+    FakeBroker.held = {"US.SCHB": 70, "US.SCHZ": 10}
+
+    def halt_while_waiting(broker, ids, timeout, interval=5):
+        (sandbox / "signals").mkdir(exist_ok=True)
+        (sandbox / "signals" / "HALT").touch()
+        return True
+    monkeypatch.setattr(m, "wait_filled", halt_while_waiting)
+    run(sandbox, "--execute")
+    assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
