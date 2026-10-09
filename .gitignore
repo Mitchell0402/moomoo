@@ -5,3 +5,4 @@ logs/run-*.json
 __pycache__/
 .venv/
 /state-real.json
+logs/dashboard.log*

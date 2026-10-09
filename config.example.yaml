@@ -106,3 +106,10 @@ signal:
   max_daily_change: 0.10 # 股票合计、单个 ETF，每天最多变动 10 个百分点
   max_age_days: 3        # 指令超过 3 天没更新就作废，沿用上一次的目标
   history_days: 120      # 回传给 Claude 的日 K 线天数
+
+# ---- 本地看板（http://localhost:8080，只读）。没有这一段时按下面的默认值，见 docs/dashboard.md ----
+dashboard:
+  port: 8080             # 端口被别的软件占用时改这里
+  up_color: green        # green = 绿涨红跌（美股习惯）；red = 红涨绿跌
+  schedule: ["10:30", "12:30", "14:30", "16:10"]   # 计划任务的运行时间，只用来显示"下次运行"
+  git_fetch_minutes: 15  # 每隔多久从 GitHub 读一次 Claude 的最新计划（不改电脑上的文件）

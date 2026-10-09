@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投资看板</title>
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23151920'/%3E%3Cpath d='M7 21l6-6 4 4 8-9' fill='none' stroke='%236ea8fe' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#151920" stroke="#2a303b"/><path d="M7 21l6-6 4 4 8-9" fill="none" stroke="#6ea8fe" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>投资看板</span>
+    <span id="env" class="pill">—</span>
+  </div>
+  <nav class="sections" aria-label="页面导航">
+    <a href="#overview">今日</a>
+    <a href="#plan">计划</a>
+    <a href="#market">市场</a>
+    <a href="#holdings">持仓</a>
+    <a href="#history">走势</a>
+    <a href="#strategies">策略</a>
+    <a href="#records">记录</a>
+  </nav>
+  <div class="clock">
+    <span id="phase-dot" class="dot"></span>
+    <span id="phase">连接中</span>
+    <span class="sep"></span>
+    <span class="upd" id="updated"></span>
+  </div>
+</header>
+
+<div id="alerts" role="status"></div>
+
+<main>
+  <section id="overview" class="grid">
+    <div class="card hero span-8">
+      <div class="hero-top">
+        <div>
+          <div class="label">总资产 <span class="faint">· 程序管理的资金</span></div>
+          <div class="big" id="value">—</div>
+          <div class="delta" id="day"></div>
+        </div>
+        <div class="legend" id="intraday-legend"></div>
+      </div>
+      <div class="chart" id="intraday"></div>
+    </div>
+    <div class="card span-4" id="compare-card">
+      <div class="card-head"><h3>今天和大盘比</h3><span class="sub" id="compare-sub"></span></div>
+      <div class="verdict" id="verdict">—</div>
+      <div id="compare"></div>
+      <p class="footnote" id="compare-note"></p>
+      <div id="contrib"></div>
+    </div>
+    <div class="kpis span-12" id="kpis"></div>
+  </section>
+
+  <section id="plan">
+    <div class="section-head"><h2>今日计划</h2><span class="sub">Claude 每个交易日早上 8:07 分析市场，在规则基准上下 10 个百分点内调整目标</span></div>
+    <div class="grid">
+      <div class="card span-7" id="plan-main"></div>
+      <div class="card span-5" id="plan-alloc"></div>
+    </div>
+  </section>
+
+  <section id="market">
+    <div class="section-head"><h2>市场概况</h2><span class="sub" id="market-sub"></span></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="card trend-card" id="trend" style="margin-top:16px"></div>
+  </section>
+
+  <section id="holdings">
+    <div class="section-head"><h2>持仓</h2><span class="sub">按程序账本推算，只含程序管理的这笔钱</span></div>
+    <div class="grid">
+      <div class="card span-8"><div class="table-wrap" id="holdings-table"></div></div>
+      <div class="card span-4" id="donut"></div>
+    </div>
+  </section>
+
+  <section id="history">
+    <div class="section-head"><h2>资产走势</h2><span class="sub" id="history-sub"></span></div>
+    <div class="card">
+      <div class="card-head">
+        <div class="legend" id="history-legend"></div>
+        <div class="seg" id="range"><button data-n="5">1 周</button><button data-n="22">1 月</button><button data-n="66">3 月</button><button data-n="0" class="on">全部</button></div>
+      </div>
+      <div class="chart" id="history-chart" style="height:300px"></div>
+      <div class="subhead" style="margin-top:18px">每日涨跌 <span class="faint">· 柱子是我的账户，横线是标普 500</span></div>
+      <div class="chart" id="daily-chart" style="height:120px"></div>
+    </div>
+  </section>
+
+  <section id="strategies">
+    <div class="section-head"><h2>策略对比</h2><span class="sub">对照策略都是虚拟账户：同样 2000 美元起步，按收盘价记账，不下单</span></div>
+    <div class="card"><div class="table-wrap" id="strategy-table"></div></div>
+  </section>
+
+  <section id="records">
+    <div class="section-head"><h2>每日记录</h2><span class="sub">点一行看当天 Claude 的理由</span></div>
+    <div class="card"><div class="table-wrap" id="daily-table"></div></div>
+    <div class="grid" style="margin-top:16px">
+      <div class="card span-6">
+        <div class="card-head"><h3>交易记录</h3><span class="sub">程序下的限价单</span></div>
+        <div class="table-wrap" id="orders-table"></div>
+      </div>
+      <div class="card span-6">
+        <div class="card-head"><h3>运行记录</h3><span class="sub" id="runs-sub"></span></div>
+        <div class="table-wrap" id="runs-table"></div>
+      </div>
+      <div class="card span-12">
+        <div class="card-head"><h3>系统状态</h3><span class="sub">看板只读，不能下单或修改配置</span></div>
+        <div class="sys" id="system"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>只读看板 · 数据来自本机程序文件和 moomoo OpenD · 金额只含程序管理的资金</span>
+  <span id="foot-time"></span>
+</footer>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

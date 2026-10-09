@@ -45,6 +45,7 @@ Claude 这边的项目记忆和分析定时任务都在云端，重装电脑不�
 
    如果提示用户不对（新电脑的 Windows 用户名变了），按 README 的“每天自动运行”一节重新建：工作日 10:30 起每 2 小时一次共 3 次，再加一个 16:10 的触发时间，并打开“错过后尽快运行”。
 7. **电源设置**：设置 → 系统 → 电源，插电时“睡眠”选“从不”。交易日 10:30–16:10 电脑要开着，别手动点睡眠。
-8. **检查**：运行 `.venv\Scripts\python -m autoinvest status`，能看到模拟账户号和持仓就说明连上了。然后在项目里跟 Claude 说一声“检查电脑”，Claude 会核对一遍。
+8. **看板**：运行 `powershell -ExecutionPolicy Bypass -File dashboard\install-autostart.ps1`，登录 Windows 时自动启动看板（http://localhost:8080），详见 [dashboard.md](dashboard.md)。
+9. **检查**：运行 `.venv\Scripts\python -m autoinvest status`，能看到模拟账户号和持仓就说明连上了。然后在项目里跟 Claude 说一声“检查电脑”，Claude 会核对一遍。
 
 如果 Claude 需要在新电脑上帮你操作，要重新在新电脑上打开 Remote Control（在项目里说一声，Claude 会发连接卡片）。

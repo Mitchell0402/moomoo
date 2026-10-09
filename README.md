@@ -67,6 +67,10 @@ $s = (Get-ScheduledTask -TaskName moomoo-autoinvest).Settings; $s.StartWhenAvail
 - `logs/run-*.json`：每次运行的完整记录，包括价格、持仓和每笔订单。
 - 有问题时把最近几个日志文件发给 Claude 就可以排查。
 
+## 看板
+
+电脑上开着一个只读网页 http://localhost:8080（暗色），能看到今天的资产涨跌、和标普 500 的对比、Claude 当天的计划、市场行情、持仓、历史走势、策略排行和交易记录。它不能下单，也不改任何文件；登录 Windows 时自动启动。安装、更新和排查见 [docs/dashboard.md](docs/dashboard.md)。
+
 ## Claude 每日动态调整
 
 打开后，目标比例不再固定，而是由 Claude 每天分析市场后写在 `signals/latest.json` 里。每天的流程：
