@@ -64,6 +64,21 @@ def build_ledger(budget: float, orders: list[dict], remark: str, codes: list[str
     return Ledger(cash=cash, holdings=holdings)
 
 
+def used_today(orders: list[dict], today: str) -> float:
+    """今天已经用掉的每日额度：已成交的金额，加上还没成交完的委托占着的金额。"""
+    from .broker import OPEN_ORDER_STATUSES
+
+    total = 0.0
+    for o in orders:
+        if not str(o.get("create_time", "")).startswith(today):
+            continue
+        dealt = float(o.get("dealt_qty") or 0)
+        total += dealt * float(o.get("dealt_avg_price") or 0)
+        if o.get("order_status") in OPEN_ORDER_STATUSES:
+            total += max(0.0, float(o.get("qty") or 0) - dealt) * float(o.get("price") or 0)
+    return total
+
+
 def limit_price(side: str, ref: float, slippage: float) -> float:
     """买单略高于参考价、卖单略低于参考价，保证大概率成交但不会离谱。美股 1 美元以上保留 2 位小数。"""
     if side == "BUY":

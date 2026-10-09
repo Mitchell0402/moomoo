@@ -564,3 +564,17 @@ def test_config_rejects_bad_numbers(sandbox, old, new):
     edit_config(sandbox, old, new)
     with pytest.raises(SystemExit):
         run(sandbox)
+
+
+def test_daily_cap_spans_runs(sandbox):
+    edit_config(sandbox, "max_daily_value_usd: 2500", "max_daily_value_usd: 575")
+    today = dt.date.today().isoformat()
+    FakeBroker.orders = [{"order_id": "s1", "code": "US.SCHB", "trd_side": "SELL", "dealt_qty": 23,
+                          "dealt_avg_price": 24.95, "qty": 23, "price": 24.95, "remark": "autoinvest-v1",
+                          "order_status": "FILLED_ALL", "create_time": f"{today} 10:30:00"}]
+    run(sandbox, "--execute")
+    spent = sum(q * p for _, _, q, p, _ in FakeBroker.placed)
+    assert spent <= 575 - 573.85 + 0.01
+    log = last_log(sandbox)
+    assert log["daily_used"] == pytest.approx(573.85)
+    assert any("受金额上限限制" in n for n in log["notes"])

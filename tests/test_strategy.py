@@ -1,3 +1,5 @@
+import pytest
+
 from autoinvest.strategy import Ledger, build_ledger, limit_price, plan_rebalance
 
 TARGETS = {"US.SCHB": 0.6, "US.SCHZ": 0.4}
@@ -83,3 +85,18 @@ def test_sell_never_exceeds_holdings():
                           max_order_value=1500, max_daily_value=2500)
     sells = [o for o in plan.orders if o.side == "SELL"]
     assert [(o.code, o.qty) for o in sells] == [("A", 3)]
+
+
+def test_used_today_counts_fills_and_open_orders():
+    from autoinvest.strategy import used_today
+    orders = [
+        {"create_time": "2026-10-09 10:30:00", "order_status": "FILLED_ALL", "qty": 10, "price": 57.5,
+         "dealt_qty": 10, "dealt_avg_price": 57.385},
+        {"create_time": "2026-10-09 12:30:00", "order_status": "SUBMITTED", "qty": 5, "price": 20.0,
+         "dealt_qty": 0, "dealt_avg_price": 0},
+        {"create_time": "2026-10-08 10:30:00", "order_status": "FILLED_ALL", "qty": 10, "price": 99.0,
+         "dealt_qty": 10, "dealt_avg_price": 99.0},
+        {"create_time": "2026-10-09 11:00:00", "order_status": "CANCELLED_ALL", "qty": 5, "price": 50.0,
+         "dealt_qty": 0, "dealt_avg_price": 0},
+    ]
+    assert used_today(orders, "2026-10-09") == pytest.approx(673.85)

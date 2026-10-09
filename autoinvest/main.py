@@ -26,7 +26,7 @@ from . import backup, baseline, guards, portfolios
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .statefile import StateError, load_state, save_state
-from .strategy import Ledger, build_ledger, plan_rebalance
+from .strategy import Ledger, build_ledger, plan_rebalance, used_today
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -391,10 +391,13 @@ def main(argv=None):
         record["guards"] = guard_info
         record["targets"] = targets
 
+        # 每日上限是一天的总额：扣掉今天前几次运行已经成交和还挂着的金额
+        daily_used = used_today(ours, today)
+        record["daily_used"] = round(daily_used, 2)
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
-            max_daily_value=cfg["max_daily_value_usd"], account_cash=account_cash)
+            max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used), account_cash=account_cash)
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
