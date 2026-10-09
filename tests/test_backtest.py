@@ -17,6 +17,7 @@ def test_guardrail_baseline_numbers():
     from pathlib import Path
     root = Path(__file__).resolve().parent.parent
     out = subprocess.run([sys.executable, "-m", "backtest.guardrail"], cwd=root, capture_output=True, text=True,
+                         encoding="utf-8",
                          check=True).stdout
     line = next(l for l in out.splitlines() if l.startswith("建议核心"))
     _, cagr, mdd, *_ = line.split(",")
