@@ -208,3 +208,30 @@ def test_intraday_chart_ignores_after_hours_bars(folder):
     d = data.assemble(folder, data.Files(folder), feed, {}, NOW)
     assert d["intraday"]["t"] == ["09:31", "09:32", "09:33"]
     assert d["intraday"]["spy"][-1] == pytest.approx(0.005)
+
+
+def test_real_env_reads_only_real_logs(folder):
+    # 配置改成实盘，logs/real/ 里还没有记录：看板不能把模拟盘的持仓显示成实盘的
+    cfg = (folder / "config.yaml").read_text(encoding="utf-8").replace("SIMULATE", "REAL")
+    write(folder / "config.yaml", cfg)
+    d = data.assemble(folder, data.Files(folder), quotes.OfflineFeed("").snapshot(), {}, NOW)
+    assert d["account"]["value"] == pytest.approx(2000.0)
+
+
+def test_shadow_pick_files_do_not_replace_plan(tmp_path):
+    day = "2026-10-09"
+    write(tmp_path / "signals" / f"{day}.json", {"date": day, "targets": {"US.SCHB": 0.7}, "rationale": "主计划"})
+    write(tmp_path / "signals" / "latest.json", {"date": day, "targets": {"US.SCHB": 0.7}, "rationale": "主计划"})
+    write(tmp_path / "signals" / "shadows.json", {"date": day, "claude_stocks": {"targets": {"US.JPM": 0.2}}})
+    write(tmp_path / "signals" / "shadows-daily.json", {"date": day, "claude_stocks_daily": {"targets": {}}})
+    write(tmp_path / "signals" / "notes.json", {"date": "2026-10-10", "targets": "oops"})
+    sigs = data.Files(tmp_path).signals()
+    assert list(sigs) == [day]
+    assert sigs[day]["targets"] == {"US.SCHB": 0.7} and "claude_stocks" not in sigs[day]
+
+
+def test_real_env_does_not_fall_back_to_paper_backup_logs(folder):
+    # 切到实盘后、第一次实盘运行之前：logs/real 和 backup/logs/real 都是空的，不能退回显示 backup/logs 里的模拟盘记录
+    write(folder / "backup" / "logs" / "run-20261008-103000.json",
+          run("2026-10-08T10:30:00", {"US.SCHB": 99}, 1.0, {"US.SCHB": 30.0}))
+    assert data.Files(folder).run_records("logs/real") == []

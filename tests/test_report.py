@@ -44,3 +44,11 @@ def test_cli_writes_the_chart(tmp_path, capsys):
     assert report.main(["--csv", str(csv_path), "--svg", str(tmp_path / "out" / "c.svg")]) == 0
     assert "我的账户" in capsys.readouterr().out
     assert (tmp_path / "out" / "c.svg").read_text(encoding="utf-8").startswith("<svg")
+
+
+def test_default_csv_prefers_real_history(tmp_path):
+    (tmp_path / "logs" / "real").mkdir(parents=True)
+    (tmp_path / "logs" / "strategies.csv").write_text("time,actual\n", encoding="utf-8")
+    assert report.default_csv(tmp_path) == tmp_path / "logs" / "strategies.csv"
+    (tmp_path / "logs" / "real" / "strategies.csv").write_text("time,actual\n", encoding="utf-8")
+    assert report.default_csv(tmp_path) == tmp_path / "logs" / "real" / "strategies.csv"

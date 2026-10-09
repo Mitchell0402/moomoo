@@ -99,7 +99,8 @@ def run(root, *extra):
 
 
 def last_log(root):
-    return json.loads(sorted((root / "logs").glob("run-*.json"))[-1].read_text(encoding="utf-8"))
+    folder = root / "logs" / "real" if (root / "logs" / "real").exists() else root / "logs"
+    return json.loads(sorted(folder.glob("run-*.json"))[-1].read_text(encoding="utf-8"))
 
 
 def test_dry_run_places_nothing(sandbox):
@@ -688,3 +689,18 @@ def test_zero_buying_power_is_reported_as_error(sandbox):
     assert run(sandbox, "--execute") == 1
     assert FakeBroker.placed == []
     assert any(n.startswith("错误") and "可用资金" in n for n in last_log(sandbox)["notes"])
+
+
+def test_real_env_writes_to_logs_real(sandbox):
+    edit_config(sandbox, "trd_env: SIMULATE", "trd_env: REAL")
+    edit_config(sandbox, "real_money_confirmed: false", "real_money_confirmed: true")
+    run(sandbox)
+    assert list((sandbox / "logs" / "real").glob("run-*.json"))
+    assert not list((sandbox / "logs").glob("run-*.json"))
+    assert FakeBroker.env == "REAL"
+
+
+def test_paper_env_keeps_logs_dir(sandbox):
+    run(sandbox)
+    assert list((sandbox / "logs").glob("run-*.json"))
+    assert not (sandbox / "logs" / "real").exists()
