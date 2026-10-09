@@ -208,3 +208,11 @@ def test_intraday_chart_ignores_after_hours_bars(folder):
     d = data.assemble(folder, data.Files(folder), feed, {}, NOW)
     assert d["intraday"]["t"] == ["09:31", "09:32", "09:33"]
     assert d["intraday"]["spy"][-1] == pytest.approx(0.005)
+
+
+def test_real_env_reads_only_real_logs(folder):
+    # 配置改成实盘，logs/real/ 里还没有记录：看板不能把模拟盘的持仓显示成实盘的
+    cfg = (folder / "config.yaml").read_text(encoding="utf-8").replace("SIMULATE", "REAL")
+    write(folder / "config.yaml", cfg)
+    d = data.assemble(folder, data.Files(folder), quotes.OfflineFeed("").snapshot(), {}, NOW)
+    assert d["account"]["value"] == pytest.approx(2000.0)

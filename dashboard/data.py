@@ -17,6 +17,8 @@ from pathlib import Path
 
 import yaml
 
+from autoinvest.paths import log_dir_name
+
 from . import timeutil
 
 NAMES = {
@@ -237,7 +239,7 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
     st = settings(cfg)
     budget = float(cfg.get("budget_usd", 2000))
     env = cfg.get("trd_env", "SIMULATE")
-    log_dir = cfg.get("log_dir", "logs")
+    log_dir = log_dir_name(cfg)
     state_name = "state.json" if env == "SIMULATE" else "state-real.json"
 
     records = files.run_records(log_dir)

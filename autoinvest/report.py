@@ -29,6 +29,12 @@ LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3
 DARK = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
 
 
+def default_csv(root: Path = ROOT) -> Path:
+    """实盘开始后用 logs/real/strategies.csv，没有就用模拟盘的 logs/strategies.csv。"""
+    real = root / "logs" / "real" / "strategies.csv"
+    return real if real.exists() else root / "logs" / "strategies.csv"
+
+
 def load(path: Path) -> list[dict]:
     with path.open(encoding="utf-8") as f:
         return [r for r in csv.DictReader(f) if r.get("time")]
@@ -135,7 +141,7 @@ def svg(data: dict, width: int = 720, height: int = 360) -> str:
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="autoinvest.report")
-    p.add_argument("--csv", default=str(ROOT / "logs" / "strategies.csv"))
+    p.add_argument("--csv", default=str(default_csv()))
     p.add_argument("--svg", help="把曲线图写到这个文件")
     p.add_argument("--budget", type=float, default=2000.0, help="每个账户的起始金额")
     args = p.parse_args(argv)

@@ -147,7 +147,7 @@ def setup_logging(root: Path, log_dir: str):
 
 def build_feed(root: Path, cfg: dict, st: dict, demo: bool) -> quotes.Feed:
     files = data.Files(root)
-    records = files.run_records(cfg.get("log_dir", "logs"))
+    records = files.run_records(data.log_dir_name(cfg))
     sig = cfg.get("signal") or {}
     codes = [c for c, _ in st["market"]]
     codes += [c for cs in (sig.get("groups") or data.DEFAULT_GROUPS).values() for c in cs]
@@ -159,7 +159,7 @@ def build_feed(root: Path, cfg: dict, st: dict, demo: bool) -> quotes.Feed:
         day = records[-1]["time"][:10] if records else "2026-10-08"
         closes = (files.json("data/status.json") or {}).get("daily_closes") or {}
         prev = {c: [p for d, p in v if d < day][-1] for c, v in closes.items() if any(d < day for d, _ in v)}
-        rows = files.csv_rows(f"{cfg.get('log_dir', 'logs')}/strategies.csv")
+        rows = files.csv_rows(f"{data.log_dir_name(cfg)}/strategies.csv")
         rows = [r for r in rows if r["time"][:10] < day and r.get("fixed_100")]
         # 演示用的大盘历史：跟着 100% 股票对照线走，最后一天对上模拟行情的昨收
         spy_daily = [(r["time"][:10], round(668.4 * float(r["fixed_100"]) / float(rows[-1]["fixed_100"]), 2))

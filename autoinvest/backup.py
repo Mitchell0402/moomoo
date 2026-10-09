@@ -55,8 +55,11 @@ def snapshot(root: Path, log_dir: Path, with_task: bool = True) -> Path:
     for name in ("state.json", "state-real.json"):
         if (root / name).exists():
             shutil.copy2(root / name, dest / name)
-    logs = dest / "logs"
-    logs.mkdir(exist_ok=True)
+    try:
+        logs = dest / log_dir.relative_to(root)   # 模拟盘 backup/logs，实盘 backup/logs/real
+    except ValueError:
+        logs = dest / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
     for f in log_dir.glob("run-*.json"):
         if not (logs / f.name).exists():
             shutil.copy2(f, logs / f.name)

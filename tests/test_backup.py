@@ -34,3 +34,21 @@ def test_backup_copies_are_not_gitignored():
     p = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "config.yaml", "state.json", "logs/run-1.json"],
                        capture_output=True, text=True)
     assert len(p.stdout.split()) == 3
+
+
+def test_snapshot_keeps_real_logs_separate(tmp_path):
+    (tmp_path / "config.yaml").write_text("acc_id: 1\n", encoding="utf-8")
+    real = tmp_path / "logs" / "real"
+    real.mkdir(parents=True)
+    (real / "run-20261019-103000.json").write_text("{}", encoding="utf-8")
+    dest = snapshot(tmp_path, real, with_task=False)
+    assert (dest / "logs" / "real" / "run-20261019-103000.json").exists()
+    assert not (dest / "logs" / "run-20261019-103000.json").exists()
+
+
+def test_real_logs_are_ignored_in_logs_but_not_in_backup():
+    p = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "logs/real/run-1.json"], capture_output=True, text=True)
+    assert p.stdout.split() == ["logs/real/run-1.json"]
+    p = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "backup/logs/real/run-1.json"],
+                       capture_output=True, text=True)
+    assert p.stdout.strip() == ""

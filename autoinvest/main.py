@@ -26,6 +26,7 @@ import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
 from . import backup, baseline, guards, portfolios
+from .paths import log_dir_name
 from .runlock import LockBusy, other_host, run_lock
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
@@ -298,7 +299,7 @@ def main(argv=None):
         record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": "skipped",
                   "trd_env": cfg["trd_env"], "notes": ["另一个程序正在运行，本次跳过"], "orders": []}
         print(record["notes"][0])
-        write_log(ROOT / cfg.get("log_dir", "logs"), record)
+        write_log(ROOT / log_dir_name(cfg), record)
         return 0
 
 
@@ -306,7 +307,8 @@ def _main(args):
     cfg = load_config(Path(args.config))
     mode = "execute" if (args.command == "run" and args.execute) else ("dry-run" if args.command == "run" else "status")
     record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": mode, "notes": [], "orders": []}
-    log_dir = ROOT / cfg.get("log_dir", "logs")
+    # 实盘的记录放在 logs/real，不和模拟盘混在一起
+    log_dir = ROOT / log_dir_name(cfg)
     # 模拟盘和实盘各记各的高点，切换时回撤不会串
     state_path = ROOT / ("state.json" if cfg["trd_env"] == "SIMULATE" else "state-real.json")
     record["trd_env"] = cfg["trd_env"]
