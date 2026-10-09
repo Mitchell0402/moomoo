@@ -228,3 +228,10 @@ def test_shadow_pick_files_do_not_replace_plan(tmp_path):
     sigs = data.Files(tmp_path).signals()
     assert list(sigs) == [day]
     assert sigs[day]["targets"] == {"US.SCHB": 0.7} and "claude_stocks" not in sigs[day]
+
+
+def test_real_env_does_not_fall_back_to_paper_backup_logs(folder):
+    # 切到实盘后、第一次实盘运行之前：logs/real 和 backup/logs/real 都是空的，不能退回显示 backup/logs 里的模拟盘记录
+    write(folder / "backup" / "logs" / "run-20261008-103000.json",
+          run("2026-10-08T10:30:00", {"US.SCHB": 99}, 1.0, {"US.SCHB": 30.0}))
+    assert data.Files(folder).run_records("logs/real") == []

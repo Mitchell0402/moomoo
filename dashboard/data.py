@@ -135,7 +135,7 @@ class Files:
         folder = self.root / log_dir
         files = sorted(folder.glob("run-*.json"))
         if not files:
-            files = sorted((self.root / "backup" / "logs").glob("run-*.json"))
+            files = sorted((self.root / "backup" / log_dir).glob("run-*.json"))
         out = []
         for f in files:
             rec = self._read(f, json.loads)
