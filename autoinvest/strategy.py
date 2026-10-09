@@ -64,6 +64,44 @@ def build_ledger(budget: float, orders: list[dict], remark: str, codes: list[str
     return Ledger(cash=cash, holdings=holdings)
 
 
+def buying_power(funds: dict) -> float:
+    """没有融资时能拿来买入的钱：现金、美元现金、美元净现金购买力里取已知的最小值。"""
+    from .broker import BrokerError
+
+    known = [funds[k] for k in ("cash", "us_cash", "usd_net_cash_power") if funds.get(k) is not None]
+    if not known:
+        raise BrokerError("查不到账户可用资金")
+    return min(known)
+
+
+def cap_buys(buys: list[Order], power: float, notes: list[str]) -> list[Order]:
+    """买单总额不超过 power：超出的那笔减少股数，之后买不起一股的去掉，每次削减都写进备注。"""
+    out, left = [], power
+    for o in buys:
+        qty = min(o.qty, max(0, math.floor(left / o.price)))
+        if qty < o.qty:
+            notes.append(f"{o.code} 计划买 {o.qty} 股，可用资金 {left:.2f} 美元只够 {qty} 股")
+        if qty > 0:
+            out.append(Order(o.code, o.side, qty, o.price))
+            left -= qty * o.price
+    return out
+
+
+def used_today(orders: list[dict], today: str) -> float:
+    """今天已经用掉的每日额度：已成交的金额，加上还没成交完的委托占着的金额。"""
+    from .broker import OPEN_ORDER_STATUSES
+
+    total = 0.0
+    for o in orders:
+        if not str(o.get("create_time", "")).startswith(today):
+            continue
+        dealt = float(o.get("dealt_qty") or 0)
+        total += dealt * float(o.get("dealt_avg_price") or 0)
+        if o.get("order_status") in OPEN_ORDER_STATUSES:
+            total += max(0.0, float(o.get("qty") or 0) - dealt) * float(o.get("price") or 0)
+    return total
+
+
 def limit_price(side: str, ref: float, slippage: float) -> float:
     """买单略高于参考价、卖单略低于参考价，保证大概率成交但不会离谱。美股 1 美元以上保留 2 位小数。"""
     if side == "BUY":
@@ -86,6 +124,10 @@ def plan_rebalance(
     values = {c: ledger.holdings.get(c, 0.0) * prices[c] for c in codes}
     managed = ledger.cash + sum(values.values())
     weights = {c: (values[c] / managed if managed > 0 else 0.0) for c in codes}
+    if managed <= 0:
+        # 管理的资产不大于 0（比如现金预留比账户现金还多）：不能按它算出买卖
+        return Plan(managed_value=managed, weights=weights, max_drift=0.0, needs_rebalance=False,
+                    notes=[f"错误：管理的资产 {managed:.2f} 美元不大于 0，本次不交易"])
     drifts = {c: weights[c] - targets[c] for c in codes}
     max_drift = max(abs(d) for d in drifts.values())
     empty = all(ledger.holdings.get(c, 0.0) <= 0 for c in codes)
@@ -107,7 +149,9 @@ def plan_rebalance(
     for c in codes:
         if deltas[c] < 0:
             px = limit_price("SELL", prices[c], slippage)
-            qty = _cap_qty(-deltas[c], px, min(max_order_value, daily_left), plan, c)
+            # 卖出不能超过手里的整股数（不做空）
+            qty = _cap_qty(min(-deltas[c], int(ledger.holdings.get(c, 0.0))), px,
+                           min(max_order_value, daily_left), plan, c)
             if qty > 0:
                 plan.orders.append(Order(c, "SELL", qty, px))
                 daily_left -= qty * px

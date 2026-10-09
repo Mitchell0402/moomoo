@@ -1,4 +1,7 @@
-from autoinvest.strategy import Ledger, build_ledger, limit_price, plan_rebalance
+import pytest
+
+from autoinvest.broker import BrokerError
+from autoinvest.strategy import Ledger, Order, build_ledger, buying_power, cap_buys, limit_price, plan_rebalance
 
 TARGETS = {"US.SCHB": 0.6, "US.SCHZ": 0.4}
 KW = dict(band=0.05, cash_buffer=0.02, slippage=0.002, max_order_value=1500, max_daily_value=2500)
@@ -66,3 +69,57 @@ def test_buys_never_exceed_real_account_cash():
 def test_limit_price_rounding():
     assert limit_price("BUY", 25.0, 0.002) == 25.05
     assert limit_price("SELL", 25.0, 0.002) == 24.95
+
+
+def test_negative_managed_value_places_nothing():
+    plan = plan_rebalance(Ledger(cash=-900.0, holdings={}), {"A": 25.0, "B": 23.0}, {"A": 0.6, "B": 0.4},
+                          band=0.05, cash_buffer=0.02, slippage=0.002, max_order_value=1500, max_daily_value=2500)
+    assert plan.orders == []
+    assert not plan.needs_rebalance
+    assert plan.notes[0].startswith("错误")
+
+
+def test_sell_never_exceeds_holdings():
+    # 账户现金为负、A 要清仓：卖出股数不能超过手里的 3 股
+    plan = plan_rebalance(Ledger(cash=0.0, holdings={"A": 3.0, "B": 0.0}), {"A": 25.0, "B": 23.0},
+                          {"A": 0.0, "B": 1.0}, band=0.05, cash_buffer=0.02, slippage=0.002,
+                          max_order_value=1500, max_daily_value=2500)
+    sells = [o for o in plan.orders if o.side == "SELL"]
+    assert [(o.code, o.qty) for o in sells] == [("A", 3)]
+
+
+def test_used_today_counts_fills_and_open_orders():
+    from autoinvest.strategy import used_today
+    orders = [
+        {"create_time": "2026-10-09 10:30:00", "order_status": "FILLED_ALL", "qty": 10, "price": 57.5,
+         "dealt_qty": 10, "dealt_avg_price": 57.385},
+        {"create_time": "2026-10-09 12:30:00", "order_status": "SUBMITTED", "qty": 5, "price": 20.0,
+         "dealt_qty": 0, "dealt_avg_price": 0},
+        {"create_time": "2026-10-08 10:30:00", "order_status": "FILLED_ALL", "qty": 10, "price": 99.0,
+         "dealt_qty": 10, "dealt_avg_price": 99.0},
+        {"create_time": "2026-10-09 11:00:00", "order_status": "CANCELLED_ALL", "qty": 5, "price": 50.0,
+         "dealt_qty": 0, "dealt_avg_price": 0},
+    ]
+    assert used_today(orders, "2026-10-09") == pytest.approx(673.85)
+
+
+def test_buying_power_takes_smallest_known_field():
+    f = {"cash": 2000, "us_cash": 100, "usd_net_cash_power": 50, "power": 4000, "total_assets": 2000}
+    assert buying_power(f) == 50
+    assert buying_power({**f, "us_cash": None, "usd_net_cash_power": None}) == 2000
+    with pytest.raises(BrokerError):
+        buying_power({"cash": None, "us_cash": None, "usd_net_cash_power": None})
+
+
+def test_cap_buys_trims_to_power():
+    notes = []
+    buys = [Order("A", "BUY", 47, 25.05), Order("B", "BUY", 34, 23.05)]
+    out = cap_buys(buys, 990.0, notes)
+    assert [(o.code, o.qty) for o in out] == [("A", 39)]
+    assert len(notes) == 2
+
+
+def test_cap_buys_leaves_affordable_orders_alone():
+    notes = []
+    buys = [Order("A", "BUY", 10, 25.0)]
+    assert cap_buys(buys, 1000.0, notes) == buys and notes == []

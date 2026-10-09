@@ -12,6 +12,8 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
+import socket
 import subprocess
 import sys
 import time
@@ -22,9 +24,11 @@ import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
 from . import backup, baseline, guards, portfolios
+from .runlock import LockBusy, other_host, run_lock
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
-from .strategy import Ledger, build_ledger, plan_rebalance
+from .statefile import StateError, load_state, save_state
+from .strategy import Ledger, buying_power, build_ledger, cap_buys, plan_rebalance, used_today
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -36,17 +40,23 @@ def load_config(path: Path) -> dict:
         sys.exit(f"trd_env 只能是 SIMULATE 或 REAL，现在是 {env}")
     if env == "REAL" and cfg.get("real_money_confirmed") is not True:
         sys.exit("要用真实资金，请在 config.yaml 里同时把 real_money_confirmed 改成 true")
+    for code, w in cfg["targets"].items():
+        if not _is_number(w) or w < 0:
+            sys.exit(f"targets 里 {code} 的权重 {w} 无效，应为 0 到 1 之间的数")
     total = sum(cfg["targets"].values())
     if abs(total - 1) > 1e-6:
         sys.exit(f"targets 权重加起来应为 1，现在是 {total}")
+    for key in ("budget_usd", "max_order_value_usd", "max_daily_value_usd"):
+        if not _is_number(cfg.get(key)) or cfg[key] <= 0:
+            sys.exit(f"{key} 必须是大于 0 的数，现在是 {cfg.get(key)}")
+    reserve = cfg.get("cash_reserve_usd", 0)
+    if not _is_number(reserve) or reserve < 0:
+        sys.exit(f"cash_reserve_usd 必须是不小于 0 的数，现在是 {reserve}")
     return cfg
 
 
-def load_state(path: Path) -> dict:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+def _is_number(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
 
 def write_log(log_dir: Path, record: dict):
@@ -240,13 +250,32 @@ def git(*args: str) -> tuple[bool, str]:
     return p.returncode == 0, (p.stdout + p.stderr).strip()
 
 
-def main(argv=None):
+def _parse(argv):
     p = argparse.ArgumentParser(prog="autoinvest")
     p.add_argument("command", choices=["run", "status", "backup"])
     p.add_argument("--execute", action="store_true", help="真正下单（默认只演练）")
     p.add_argument("--config", default=str(ROOT / "config.yaml"))
-    args = p.parse_args(argv)
+    return p.parse_args(argv)
 
+
+def main(argv=None):
+    args = _parse(argv)
+    if args.command != "run":
+        return _main(args)
+    try:
+        # 手动运行、计划任务、另一份拷贝同时跑会重复下单：同一台电脑上一次只许一个
+        with run_lock(ROOT / ".run.lock"):
+            return _main(args)
+    except LockBusy:
+        cfg = load_config(Path(args.config))
+        record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": "skipped",
+                  "trd_env": cfg["trd_env"], "notes": ["另一个程序正在运行，本次跳过"], "orders": []}
+        print(record["notes"][0])
+        write_log(ROOT / cfg.get("log_dir", "logs"), record)
+        return 0
+
+
+def _main(args):
     cfg = load_config(Path(args.config))
     mode = "execute" if (args.command == "run" and args.execute) else ("dry-run" if args.command == "run" else "status")
     record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": mode, "notes": [], "orders": []}
@@ -279,6 +308,20 @@ def main(argv=None):
         if not ok:
             record["notes"].append(f"拉取 Claude 指令失败（git pull）：{out[-200:]}")
 
+    status_file = ROOT / "data" / "status.json"
+    if mode == "execute" and status_file.exists():
+        try:
+            other = other_host(json.loads(status_file.read_text(encoding="utf-8")), socket.gethostname(),
+                               dt.date.today().isoformat())
+        except (OSError, ValueError, AttributeError):
+            other = None
+        if other:
+            # status.json 是各台电脑运行后推到 GitHub 的；今天别的电脑已经跑过，说明可能有两台在同时交易
+            record["notes"].append(f"错误：{other} 今天也在运行这个程序，两台电脑同时运行会重复下单，本次不交易")
+            print(json.dumps(record, ensure_ascii=False, indent=2))
+            write_log(log_dir, record)
+            return 1
+
     if (ROOT / "signals" / "HALT").exists():
         # 远程急停：Mitchell 在项目里说"停"，Claude 往仓库写 signals/HALT，下一次运行就不再交易
         record["notes"].append("远程急停已打开（signals/HALT），不做任何操作")
@@ -286,7 +329,15 @@ def main(argv=None):
         write_log(log_dir, record)
         return 0
 
-    state = load_state(state_path)
+    try:
+        state, state_notes = load_state(state_path)
+    except StateError as e:
+        # 回撤高点这类风险状态丢了就不能当作第一次运行继续交易
+        record["notes"].append(f"错误：状态文件无法读取，本次不交易：{e}")
+        print(json.dumps(record, ensure_ascii=False, indent=2))
+        write_log(log_dir, record)
+        return 1
+    record["notes"] += state_notes
     bench_targets = cfg["targets"]
     g = guards.settings(cfg)
     b = baseline.settings(cfg)
@@ -314,7 +365,11 @@ def main(argv=None):
         orders = broker.orders_since(dt.date.fromisoformat(str(cfg["start_date"])))
         ours = [o for o in orders if o.get("remark") == remark]
         prices = broker.prices(codes)
-        account_cash = broker.account_cash()
+        funds = broker.funds()
+        if funds.get("cash") is None:
+            raise BrokerError("查不到账户现金（cash）")
+        account_cash = funds["cash"]
+        record["funds"] = funds
         mode_ledger = ledger_mode(cfg)
         record["ledger_mode"] = mode_ledger
         if mode_ledger == "account":
@@ -375,10 +430,14 @@ def main(argv=None):
         record["guards"] = guard_info
         record["targets"] = targets
 
+        # 每日上限是一天的总额：扣掉今天前几次运行已经成交和还挂着的金额
+        daily_used = used_today(ours, today)
+        record["daily_used"] = round(daily_used, 2)
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
-            max_daily_value=cfg["max_daily_value_usd"], account_cash=account_cash)
+            max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used),
+            account_cash=buying_power(funds))
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
@@ -431,6 +490,11 @@ def main(argv=None):
                 if buys and sell_ids and not wait_filled(broker, sell_ids, timeout):
                     record["notes"].append(f"卖单 {timeout:.0f} 秒内没有全部成交，买单留到下一次运行")
                 else:
+                    if sell_ids:
+                        # 卖单成交后重新查一次资金，买单不超过这时真正能用的钱
+                        funds_after = broker.funds()
+                        record["funds_after_sells"] = funds_after
+                        buys = cap_buys(buys, buying_power(funds_after), record["notes"])
                     for o in buys:
                         oid = broker.place_limit(o.code, o.side, o.qty, o.price, remark)
                         record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
@@ -468,13 +532,14 @@ def main(argv=None):
         else:
             record["planned_orders"] = [{"code": o.code, "side": o.side, "qty": o.qty, "price": o.price}
                                         for o in plan.orders]
-        state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        save_state(state_path, state)
 
         if use_signal:
-            status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
+            status = {"host": socket.gethostname()}
+            status.update({k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
                                                  "strategies", "guards", "ledger_mode", "baseline",
-                                                 "portfolios")}
+                                                 "portfolios")})
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}
