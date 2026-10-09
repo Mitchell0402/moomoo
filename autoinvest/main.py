@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import json
 import math
+import socket
 import subprocess
 import sys
 import time
@@ -23,6 +24,7 @@ import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
 from . import backup, baseline, guards, portfolios
+from .runlock import LockBusy, other_host, run_lock
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .statefile import StateError, load_state, save_state
@@ -248,13 +250,32 @@ def git(*args: str) -> tuple[bool, str]:
     return p.returncode == 0, (p.stdout + p.stderr).strip()
 
 
-def main(argv=None):
+def _parse(argv):
     p = argparse.ArgumentParser(prog="autoinvest")
     p.add_argument("command", choices=["run", "status", "backup"])
     p.add_argument("--execute", action="store_true", help="真正下单（默认只演练）")
     p.add_argument("--config", default=str(ROOT / "config.yaml"))
-    args = p.parse_args(argv)
+    return p.parse_args(argv)
 
+
+def main(argv=None):
+    args = _parse(argv)
+    if args.command != "run":
+        return _main(args)
+    try:
+        # 手动运行、计划任务、另一份拷贝同时跑会重复下单：同一台电脑上一次只许一个
+        with run_lock(ROOT / ".run.lock"):
+            return _main(args)
+    except LockBusy:
+        cfg = load_config(Path(args.config))
+        record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": "skipped",
+                  "trd_env": cfg["trd_env"], "notes": ["另一个程序正在运行，本次跳过"], "orders": []}
+        print(record["notes"][0])
+        write_log(ROOT / cfg.get("log_dir", "logs"), record)
+        return 0
+
+
+def _main(args):
     cfg = load_config(Path(args.config))
     mode = "execute" if (args.command == "run" and args.execute) else ("dry-run" if args.command == "run" else "status")
     record = {"time": dt.datetime.now().isoformat(timespec="seconds"), "mode": mode, "notes": [], "orders": []}
@@ -286,6 +307,20 @@ def main(argv=None):
         ok, out = git("pull", "--rebase", "--autostash")
         if not ok:
             record["notes"].append(f"拉取 Claude 指令失败（git pull）：{out[-200:]}")
+
+    status_file = ROOT / "data" / "status.json"
+    if mode == "execute" and status_file.exists():
+        try:
+            other = other_host(json.loads(status_file.read_text(encoding="utf-8")), socket.gethostname(),
+                               dt.date.today().isoformat())
+        except (OSError, ValueError, AttributeError):
+            other = None
+        if other:
+            # status.json 是各台电脑运行后推到 GitHub 的；今天别的电脑已经跑过，说明可能有两台在同时交易
+            record["notes"].append(f"错误：{other} 今天也在运行这个程序，两台电脑同时运行会重复下单，本次不交易")
+            print(json.dumps(record, ensure_ascii=False, indent=2))
+            write_log(log_dir, record)
+            return 1
 
     if (ROOT / "signals" / "HALT").exists():
         # 远程急停：Mitchell 在项目里说"停"，Claude 往仓库写 signals/HALT，下一次运行就不再交易
@@ -490,10 +525,11 @@ def main(argv=None):
         save_state(state_path, state)
 
         if use_signal:
-            status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
+            status = {"host": socket.gethostname()}
+            status.update({k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
                                                  "strategies", "guards", "ledger_mode", "baseline",
-                                                 "portfolios")}
+                                                 "portfolios")})
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}

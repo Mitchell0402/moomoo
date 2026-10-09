@@ -578,3 +578,30 @@ def test_daily_cap_spans_runs(sandbox):
     log = last_log(sandbox)
     assert log["daily_used"] == pytest.approx(573.85)
     assert any("受金额上限限制" in n for n in log["notes"])
+
+
+def test_busy_lock_skips_run(sandbox):
+    from autoinvest.runlock import run_lock
+    with run_lock(sandbox / ".run.lock"):
+        assert run(sandbox, "--execute") == 0
+    assert FakeBroker.placed == []
+    assert any("另一个程序正在运行" in n for n in last_log(sandbox)["notes"])
+
+
+def test_other_pc_blocks_trading(sandbox, monkeypatch):
+    (sandbox / "data").mkdir()
+    (sandbox / "data" / "status.json").write_text(
+        json.dumps({"host": "OLD-PC", "time": dt.datetime.now().isoformat(timespec="seconds")}), encoding="utf-8")
+    monkeypatch.setattr(m.socket, "gethostname", lambda: "NEW-PC")
+    assert run(sandbox, "--execute") == 1
+    assert FakeBroker.placed == []
+    assert any(n.startswith("错误") and "OLD-PC" in n for n in last_log(sandbox)["notes"])
+
+
+def test_same_pc_status_does_not_block(sandbox, monkeypatch):
+    (sandbox / "data").mkdir()
+    (sandbox / "data" / "status.json").write_text(
+        json.dumps({"host": "NEW-PC", "time": dt.datetime.now().isoformat(timespec="seconds")}), encoding="utf-8")
+    monkeypatch.setattr(m.socket, "gethostname", lambda: "NEW-PC")
+    assert run(sandbox, "--execute") == 0
+    assert FakeBroker.placed

@@ -9,3 +9,4 @@ logs/dashboard.log*
 /state.json.bak
 /state-real.json.bak
 *.tmp
+/.run.lock
