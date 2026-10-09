@@ -155,3 +155,56 @@ def test_http_is_read_only(folder):
         assert e.value.code == 404
     finally:
         httpd.shutdown()
+
+
+def minutes(day, start, n, price=1.0):
+    t0 = dt.datetime.fromisoformat(f"{day} {start}")
+    return [((t0 + dt.timedelta(minutes=i)).strftime("%Y-%m-%d %H:%M:%S"), price) for i in range(n)]
+
+
+def test_minute_bars_keep_only_regular_session(monkeypatch):
+    # 晚上 23:20 打开看板：SPY 最近 1000 根分钟线里一大半是盘后和夜盘的，白天只剩 15:40 以后的
+    import sys
+    import types
+    fake = types.SimpleNamespace(RET_OK=0, KLType=types.SimpleNamespace(K_1M="K_1M"),
+                                 SubType=types.SimpleNamespace(K_1M="K_1M"))
+    monkeypatch.setitem(sys.modules, "moomoo", fake)
+    monkeypatch.setattr(timeutil, "now_et", lambda: dt.datetime(2026, 10, 8, 23, 20))
+    day = "2026-10-08"
+    cur = {"US.SPY": minutes(day, "15:41:00", 20, 600.0) + minutes(day, "16:01:00", 440, 601.0),
+           "US.SCHB": minutes(day, "09:31:00", 390, 30.0) + minutes(day, "16:01:00", 60, 30.5)}
+    full = minutes(day, "04:01:00", 330, 599.0) + minutes(day, "09:31:00", 390, 600.0)
+
+    class Ctx:
+        history_calls = []
+
+        def subscribe(self, *a, **kw):
+            return 0, None
+
+        def get_cur_kline(self, code, num, ktype):
+            rows = cur[code][-num:]
+            return 0, {"time_key": [t for t, _ in rows], "close": [p for _, p in rows]}
+
+        def request_history_kline(self, code, start, end, ktype, max_count):
+            self.history_calls.append(code)
+            return 0, {"time_key": [t for t, _ in full], "close": [p for _, p in full]}, None
+
+    feed = quotes.OpenDFeed("127.0.0.1", 11111, ["US.SPY", "US.SCHB"])
+    feed.ctx = Ctx()
+    bars = feed._klines(day)
+    assert [t[11:16] for t, _ in bars["US.SPY"]][:1] + [bars["US.SPY"][-1][0][11:16]] == ["09:31", "16:00"]
+    assert len(bars["US.SPY"]) == 390
+    assert len(bars["US.SCHB"]) == 390
+    assert Ctx.history_calls == ["US.SPY"]  # SCHB 白天的数据是全的，不用补取
+    feed._klines(day)
+    assert Ctx.history_calls == ["US.SPY"]  # 补取过的当天不再取
+
+
+def test_intraday_chart_ignores_after_hours_bars(folder):
+    feed = live_feed(Q)
+    day = "2026-10-08"
+    feed["bars"] = {"US.SPY": minutes(day, "09:31:00", 3, 603.0) + minutes(day, "16:01:00", 2, 590.0),
+                    "US.SCHB": minutes(day, "09:31:00", 3, 30.5)}
+    d = data.assemble(folder, data.Files(folder), feed, {}, NOW)
+    assert d["intraday"]["t"] == ["09:31", "09:32", "09:33"]
+    assert d["intraday"]["spy"][-1] == pytest.approx(0.005)

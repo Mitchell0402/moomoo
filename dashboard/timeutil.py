@@ -65,6 +65,12 @@ PHASES = {
 PHASE_LABELS = {"pre": "盘前", "open": "交易中", "post": "盘后", "closed": "休市"}
 
 
+def in_session(stamp: str, day: str) -> bool:
+    """分钟线时间（"2026-10-08 09:31:00"，是这一分钟结束的时间）是不是 day 这天的正常交易时段。
+    盘前、盘后和夜盘的分钟线不要：SPY、QQQ 夜里也在交易，混进来会把白天的数据挤掉。"""
+    return stamp[:10] == day and "09:30:00" < stamp[11:19] <= "16:00:00"
+
+
 def next_run(now: dt.datetime, schedule: list[str]) -> dt.datetime | None:
     """下一次计划任务运行的时间（工作日，按 config 里的时间表）。"""
     times = sorted(dt.time.fromisoformat(s) for s in schedule)
