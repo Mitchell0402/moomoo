@@ -564,7 +564,7 @@ def build_intraday(feed, books, qdate, prev, value_prev, shadows, s_code, b_code
         for t, px in samples:
             for c, p in px.items():
                 bars.setdefault(c, []).append((t, p))
-    times = sorted({t for series in bars.values() for t, _ in series if t[:10] == qdate})
+    times = sorted({t for series in bars.values() for t, _ in series if timeutil.in_session(t, qdate)})
     if not times or not value_prev:
         return None
     lookup = {c: dict(s) for c, s in bars.items()}

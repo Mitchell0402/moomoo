@@ -69,6 +69,7 @@ class OpenDFeed(Feed):
         self._stop = threading.Event()
         self._spy_day = None
         self._last_kline = 0.0
+        self._day_bars: dict = {}
         self._thread = threading.Thread(target=self._run, name="quotes", daemon=True)
 
     def start(self):
@@ -169,12 +170,38 @@ class OpenDFeed(Feed):
                 return {}
             self.subscribed = True
         out = {}
+        late = timeutil.now_et().strftime("%Y-%m-%d %H:%M:%S") > f"{qdate} 09:46:00"
         for c in self.codes:
-            ret, df = self.ctx.get_cur_kline(c, 420, KLType.K_1M)
-            if ret != RET_OK:
-                continue
-            out[c] = [(str(t), num(p)) for t, p in zip(df["time_key"], df["close"]) if str(t)[:10] == qdate and num(p)]
+            ret, df = self.ctx.get_cur_kline(c, 1000, KLType.K_1M)
+            got = self._regular(df, qdate) if ret == RET_OK else {}
+            # 最近 1000 根里可能大半是盘后和夜盘的（晚上打开看板时 SPY 就是这样），白天开头没取到的话，
+            # 按日期补取这一天的分钟线（取到了就每只每天只取一次）
+            if late and (not got or min(got) > f"{qdate} 09:45:00"):
+                if not self._day_bars.get((c, qdate)):
+                    self._day_bars[(c, qdate)] = self._history_day(c, qdate)
+                got = {**self._day_bars[(c, qdate)], **got}
+            if got:
+                out[c] = sorted(got.items())
         return out
+
+    @staticmethod
+    def _regular(df, qdate: str) -> dict:
+        return {str(t): num(p) for t, p in zip(df["time_key"], df["close"])
+                if timeutil.in_session(str(t), qdate) and num(p)}
+
+    def _history_day(self, code: str, qdate: str) -> dict:
+        from moomoo import RET_OK, KLType
+
+        try:
+            ret, df, _ = self.ctx.request_history_kline(code, start=qdate, end=qdate, ktype=KLType.K_1M,
+                                                        max_count=1000)
+        except Exception as e:  # noqa: BLE001
+            log.info("取 %s 当天分钟线失败：%s", code, e)
+            return {}
+        if ret != RET_OK:
+            log.info("取 %s 当天分钟线失败：%s", code, df)
+            return {}
+        return self._regular(df, qdate)
 
     def _spy_history(self) -> list:
         from moomoo import RET_OK
