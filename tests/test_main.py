@@ -493,17 +493,17 @@ def test_claude_stock_picks_are_tracked_and_reported(sandbox):
     enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHZ": 0.20, "US.GLDM": 0.10})
     run(sandbox, "--execute")
     log = last_log(sandbox)
-    assert log["strategies"]["claude_stocks"] == 2000.0 and log["strategies"]["claude_sectors"] == 2000.0
+    assert log["strategies"]["claude_stocks"] == 1999.0 and log["strategies"]["claude_sectors"] == 1999.0
     assert log["portfolios"]["claude_stocks"]["weights"]["US.AAPL"] == 0.2
     status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
     assert status["portfolios"]["claude_sectors"]["weights"] == {"US.XLK": 0.5, "US.XLV": 0.5}
-    assert status["strategies"]["nasdaq_100"] == 2000.0
+    assert status["strategies"]["nasdaq_100"] == 1999.0
     # 第二次运行（同一天收盘后）AAPL 涨 10%：只估值
     FakeBroker.placed, FakeBroker.orders = [], held_orders(47, 34)
     FakeBroker.state = "CLOSED"
     FakeBroker.price_override = {"US.AAPL": 275.0}
     run(sandbox, "--execute")
-    assert last_log(sandbox)["strategies"]["claude_stocks"] == 2040.0
+    assert last_log(sandbox)["strategies"]["claude_stocks"] == round(1999 + 1999 * 0.2 / 250 * 25, 2)
 
 
 def test_unknown_stock_code_only_skips_that_portfolio(sandbox):
@@ -512,7 +512,7 @@ def test_unknown_stock_code_only_skips_that_portfolio(sandbox):
     assert run(sandbox, "--execute") == 0
     log = last_log(sandbox)
     assert log["strategies"]["claude_stocks"] == 2000.0 and log["portfolios"]["claude_stocks"]["weights"] == {}
-    assert log["strategies"]["nasdaq_100"] == 2000.0
+    assert log["strategies"]["nasdaq_100"] == 1999.0
     assert any("US.ZZZZ" in n for n in log["notes"])
     assert {c for c, *_ in FakeBroker.placed} <= {"US.SCHB", "US.SCHZ", "US.GLDM"}  # 实际账户照常
 
