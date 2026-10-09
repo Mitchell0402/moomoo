@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-09",
+  "claude_stocks_daily": {
+    "targets": {
+      "US.JPM": 0.15,
+      "US.GOOGL": 0.14,
+      "US.XOM": 0.13,
+      "US.LLY": 0.13,
+      "US.MSFT": 0.12,
+      "US.RTX": 0.11,
+      "US.WMT": 0.11,
+      "US.PG": 0.11
+    },
+    "rationale": "第一天，和每周选股相同，理由见 shadows.json。之后只有新闻给出明确理由才换。"
+  }
+}
