@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import autoinvest.main as m
+from autoinvest.portfolios import SECTORS
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -33,8 +34,14 @@ class FakeBroker:
         return list(FakeBroker.orders)
 
     def prices(self, codes):
-        table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0}
+        table = {"US.SCHB": 25.0, "US.SCHZ": 23.0, "US.SCHF": 22.0, "US.SCHO": 24.0, "US.GLDM": 86.0,
+                 "US.QQQM": 200.0, "US.SSO": 90.0, "US.TLT": 85.0, "US.SCHD": 27.0, "US.DBMF": 28.0}
+        table.update({c: 50.0 for c in SECTORS})
+        table.update({"US.AAPL": 250.0, "US.MSFT": 500.0, "US.NVDA": 180.0, "US.JPM": 300.0, "US.XOM": 110.0})
         table.update(FakeBroker.price_override)
+        missing = [c for c in codes if c not in table]
+        if missing:
+            raise m.BrokerError(f"没有拿到这些标的的价格：{missing}")
         return {c: table[c] for c in codes}
 
     def daily_closes(self, codes, days):
@@ -303,7 +310,8 @@ def test_baseline_shadow_is_logged(sandbox):
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
     run(sandbox, "--execute")
     header = (sandbox / "logs" / "strategies.csv").read_text(encoding="utf-8").splitlines()[0]
-    assert header.endswith(",baseline,intraday")
+    names = header.split(",")
+    assert {"baseline", "intraday", "claude_stocks", "sector_momentum"} <= set(names)
 
 
 def test_strategies_csv_keeps_old_rows_when_columns_change(sandbox):
@@ -316,7 +324,7 @@ def test_strategies_csv_keeps_old_rows_when_columns_change(sandbox):
     assert list(logs.glob("strategies-until-*.csv")) == []
     lines = (logs / "strategies.csv").read_text(encoding="utf-8").splitlines()
     names = lines[0].split(",")
-    assert names[-2:] == ["baseline", "intraday"] and len(lines) == 3
+    assert {"baseline", "intraday", "nasdaq_100"} <= set(names) and len(lines) == 3
     old = dict(zip(names, lines[1].split(",")))
     assert old["actual"] == "1990" and old["fixed_100"] == "2010" and old["intraday"] == ""
     new = dict(zip(names, lines[2].split(",")))
@@ -470,3 +478,55 @@ def test_drawdown_brake_lets_claude_move_the_cut_into_bonds(sandbox):
     assert log["baseline"]["ranges"]["stock"] == [0.5, 0.5]
     assert log["baseline"]["ranges"]["bond"] == [0.1, 0.5]
     assert log["signal"] and log["targets"]["US.SCHZ"] == 0.4
+
+
+def write_picks(root, picks):
+    (root / "signals").mkdir(exist_ok=True)
+    (root / "signals" / "shadows.json").write_text(json.dumps(picks), encoding="utf-8")
+
+
+def test_claude_stock_picks_are_tracked_and_reported(sandbox):
+    stocks = {"US.AAPL": 0.2, "US.MSFT": 0.2, "US.NVDA": 0.2, "US.JPM": 0.2, "US.XOM": 0.2}
+    write_picks(sandbox, {"date": dt.date.today().isoformat(), "claude_stocks": {"targets": stocks},
+                          "claude_sectors": {"targets": {"US.XLK": 0.5, "US.XLV": 0.5}}})
+    FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
+    enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHZ": 0.20, "US.GLDM": 0.10})
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["strategies"]["claude_stocks"] == 2000.0 and log["strategies"]["claude_sectors"] == 2000.0
+    assert log["portfolios"]["claude_stocks"]["weights"]["US.AAPL"] == 0.2
+    status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
+    assert status["portfolios"]["claude_sectors"]["weights"] == {"US.XLK": 0.5, "US.XLV": 0.5}
+    assert status["strategies"]["nasdaq_100"] == 2000.0
+    # 第二次运行（同一天收盘后）AAPL 涨 10%：只估值
+    FakeBroker.placed, FakeBroker.orders = [], held_orders(47, 34)
+    FakeBroker.state = "CLOSED"
+    FakeBroker.price_override = {"US.AAPL": 275.0}
+    run(sandbox, "--execute")
+    assert last_log(sandbox)["strategies"]["claude_stocks"] == 2040.0
+
+
+def test_unknown_stock_code_only_skips_that_portfolio(sandbox):
+    stocks = {"US.AAPL": 0.2, "US.MSFT": 0.2, "US.NVDA": 0.2, "US.JPM": 0.2, "US.ZZZZ": 0.2}
+    write_picks(sandbox, {"date": dt.date.today().isoformat(), "claude_stocks": {"targets": stocks}})
+    assert run(sandbox, "--execute") == 0
+    log = last_log(sandbox)
+    assert log["strategies"]["claude_stocks"] == 2000.0 and log["portfolios"]["claude_stocks"]["weights"] == {}
+    assert log["strategies"]["nasdaq_100"] == 2000.0
+    assert any("US.ZZZZ" in n for n in log["notes"])
+    assert {c for c, *_ in FakeBroker.placed} <= {"US.SCHB", "US.SCHZ", "US.GLDM"}  # 实际账户照常
+
+
+def test_sector_momentum_uses_six_month_returns(sandbox):
+    up = history(10.0, 20.0, 140)
+    FakeBroker.closes = {"US.XLE": up, "US.XLK": history(10.0, 15.0, 140), "US.XLU": history(10.0, 12.0, 140),
+                         **{c: history(10.0, 10.0, 140) for c in SECTORS if c not in ("US.XLE", "US.XLK", "US.XLU")}}
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert set(log["portfolios"]["sector_momentum"]["weights"]) == {"US.XLE", "US.XLK", "US.XLU"}
+
+
+def test_portfolios_can_be_turned_off(sandbox):
+    edit_config(sandbox, "  portfolios: true ", "  portfolios: false ")
+    run(sandbox, "--execute")
+    assert "nasdaq_100" not in last_log(sandbox)["strategies"]

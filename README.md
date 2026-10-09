@@ -99,6 +99,22 @@ Claude 的权限：只能用白名单里的 5 只 ETF（SCHB、SCHF、SCHZ、SCH
 | risk_parity | 按股票、债券各自波动的倒数分配 |
 | intraday | 日内交易对照：每个交易日开盘价买 SCHB、收盘价全部卖出，晚上拿现金，每次来回扣 0.05% 成本（`shadows.intraday_cost`）。用来回答"做日内能不能比长期持有赚得多"。`config.yaml` 里不写也默认打开，`shadows.intraday: false` 关掉 |
 
+还有 9 个组合对照（`autoinvest/portfolios.py`，`config.yaml` 里不写也默认打开，`shadows.portfolios: false` 关掉），可以用任意 ETF 或股票：
+
+| 名字 | 规则 |
+| --- | --- |
+| claude_stocks | Claude 每周挑 5 到 10 只大盘股，单只最多 20%，写在 `signals/shadows.json`；指令日期变了才调仓，之前一直持有 |
+| claude_sectors | Claude 每周在 11 个行业 ETF（XLK、XLV、XLF、XLE、XLY、XLP、XLI、XLU、XLB、XLRE、XLC）里选配，单个最多 50% |
+| sector_momentum | 规则版行业轮动：每月第一次运行时买过去约 6 个月涨得最多的 3 个行业 ETF，各 1/3，用来衡量 Claude 的行业判断 |
+| nasdaq_100 | 100% QQQM |
+| sp500_2x | 100% SSO（2 倍杠杆标普 500） |
+| three_fund | SCHB 50% / SCHF 20% / SCHZ 30% |
+| permanent | SCHB、TLT、GLDM、SCHO 各 25% |
+| dividend | 100% SCHD |
+| managed_futures | SCHB 50% / SCHZ 30% / DBMF 20% |
+
+Claude 的选股指令不合规（代码不对、只数不对、单只超限）时，那一部分作废，账户继续持有原来的；某只股票拿不到价格时那个账户这次不调仓，日志里有备注，都不影响实际账户。
+
 `logs/strategies.csv` 每天一行：`actual` 是实际账户价值，后面每列是一个策略的虚拟账户价值。对照账户在当天第一次运行时按需调仓，之后每次运行都按现价重新估值并覆盖当天那行，所以收盘后那次运行（16:10）跑过的话，记的是收盘价。对照账户在第一次执行那天建立，从同一天开始比；以后新加的策略从加进来那天开始记，表头会自动加一列，旧的行在新列里留空。用的是 SCHB 和 SCHZ 两只 ETF 的价格，没算分红，所以绝对数字略低于真实收益，但各策略之间可以直接比。
 
 `backtest/compare_results.txt` 是这些规则在 1954 年以来月度数据上的回测（`python -m backtest.compare` 重新生成）。回测用的是每月平均价，会让趋势类策略看起来比实际好，所以已经按“信号晚一个月执行”做了保守处理。Claude 的动态调整没法回测，因为 Claude 已经知道历史行情，只能从现在开始往前跑着比。
