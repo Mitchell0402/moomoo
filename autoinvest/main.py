@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import subprocess
 import sys
 import time
@@ -37,10 +38,23 @@ def load_config(path: Path) -> dict:
         sys.exit(f"trd_env 只能是 SIMULATE 或 REAL，现在是 {env}")
     if env == "REAL" and cfg.get("real_money_confirmed") is not True:
         sys.exit("要用真实资金，请在 config.yaml 里同时把 real_money_confirmed 改成 true")
+    for code, w in cfg["targets"].items():
+        if not _is_number(w) or w < 0:
+            sys.exit(f"targets 里 {code} 的权重 {w} 无效，应为 0 到 1 之间的数")
     total = sum(cfg["targets"].values())
     if abs(total - 1) > 1e-6:
         sys.exit(f"targets 权重加起来应为 1，现在是 {total}")
+    for key in ("budget_usd", "max_order_value_usd", "max_daily_value_usd"):
+        if not _is_number(cfg.get(key)) or cfg[key] <= 0:
+            sys.exit(f"{key} 必须是大于 0 的数，现在是 {cfg.get(key)}")
+    reserve = cfg.get("cash_reserve_usd", 0)
+    if not _is_number(reserve) or reserve < 0:
+        sys.exit(f"cash_reserve_usd 必须是不小于 0 的数，现在是 {reserve}")
     return cfg
+
+
+def _is_number(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
 
 def write_log(log_dir: Path, record: dict):

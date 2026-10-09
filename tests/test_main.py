@@ -548,3 +548,19 @@ def test_corrupt_state_recovers_from_backup(sandbox):
     log = last_log(sandbox)
     assert log["drawdown"] > 0.3
     assert any(n.startswith("警告") and "备份" in n for n in log["notes"])
+
+
+def test_config_rejects_negative_weight(sandbox):
+    edit_config(sandbox, "US.SCHB: 0.60", "US.SCHB: -0.20")
+    edit_config(sandbox, "US.SCHZ: 0.40", "US.SCHZ: 1.20")
+    with pytest.raises(SystemExit):
+        run(sandbox)
+
+
+@pytest.mark.parametrize("old,new", [("US.SCHB: 0.60", "US.SCHB: true"), ("budget_usd: 2000", "budget_usd: 0"),
+                                     ("max_daily_value_usd: 2500", "max_daily_value_usd: -1"),
+                                     ("cash_reserve_usd: 0", "cash_reserve_usd: -5")])
+def test_config_rejects_bad_numbers(sandbox, old, new):
+    edit_config(sandbox, old, new)
+    with pytest.raises(SystemExit):
+        run(sandbox)

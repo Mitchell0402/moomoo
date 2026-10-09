@@ -66,3 +66,20 @@ def test_buys_never_exceed_real_account_cash():
 def test_limit_price_rounding():
     assert limit_price("BUY", 25.0, 0.002) == 25.05
     assert limit_price("SELL", 25.0, 0.002) == 24.95
+
+
+def test_negative_managed_value_places_nothing():
+    plan = plan_rebalance(Ledger(cash=-900.0, holdings={}), {"A": 25.0, "B": 23.0}, {"A": 0.6, "B": 0.4},
+                          band=0.05, cash_buffer=0.02, slippage=0.002, max_order_value=1500, max_daily_value=2500)
+    assert plan.orders == []
+    assert not plan.needs_rebalance
+    assert plan.notes[0].startswith("错误")
+
+
+def test_sell_never_exceeds_holdings():
+    # 账户现金为负、A 要清仓：卖出股数不能超过手里的 3 股
+    plan = plan_rebalance(Ledger(cash=0.0, holdings={"A": 3.0, "B": 0.0}), {"A": 25.0, "B": 23.0},
+                          {"A": 0.0, "B": 1.0}, band=0.05, cash_buffer=0.02, slippage=0.002,
+                          max_order_value=1500, max_daily_value=2500)
+    sells = [o for o in plan.orders if o.side == "SELL"]
+    assert [(o.code, o.qty) for o in sells] == [("A", 3)]

@@ -86,6 +86,10 @@ def plan_rebalance(
     values = {c: ledger.holdings.get(c, 0.0) * prices[c] for c in codes}
     managed = ledger.cash + sum(values.values())
     weights = {c: (values[c] / managed if managed > 0 else 0.0) for c in codes}
+    if managed <= 0:
+        # 管理的资产不大于 0（比如现金预留比账户现金还多）：不能按它算出买卖
+        return Plan(managed_value=managed, weights=weights, max_drift=0.0, needs_rebalance=False,
+                    notes=[f"错误：管理的资产 {managed:.2f} 美元不大于 0，本次不交易"])
     drifts = {c: weights[c] - targets[c] for c in codes}
     max_drift = max(abs(d) for d in drifts.values())
     empty = all(ledger.holdings.get(c, 0.0) <= 0 for c in codes)
@@ -107,7 +111,9 @@ def plan_rebalance(
     for c in codes:
         if deltas[c] < 0:
             px = limit_price("SELL", prices[c], slippage)
-            qty = _cap_qty(-deltas[c], px, min(max_order_value, daily_left), plan, c)
+            # 卖出不能超过手里的整股数（不做空）
+            qty = _cap_qty(min(-deltas[c], int(ledger.holdings.get(c, 0.0))), px,
+                           min(max_order_value, daily_left), plan, c)
             if qty > 0:
                 plan.orders.append(Order(c, "SELL", qty, px))
                 daily_left -= qty * px
