@@ -458,13 +458,19 @@ def _main(args):
         record["targets"] = targets
 
         # 每日上限是一天的总额：扣掉今天前几次运行已经成交和还挂着的金额
+        power = buying_power(funds)
+        power_bad = power <= 0 < account_cash
+        if power_bad:
+            # 现金有但可用资金字段是 0：多半是 SDK 对这个账户报的字段不对。不能让买单悄悄变成 0 股还当作正常运行
+            record["notes"].append(f"错误：账户现金 {account_cash:.2f} 美元，但可用资金字段是 {power:.2f}"
+                                   f"（{funds}），本次不下单，请检查账户类型和资金字段")
         daily_used = used_today(ours, today)
         record["daily_used"] = round(daily_used, 2)
         plan = plan_rebalance(
             ledger, prices, targets, band=cfg["rebalance_band"], cash_buffer=cfg["cash_buffer"],
             slippage=cfg["limit_slippage"], max_order_value=cfg["max_order_value_usd"],
             max_daily_value=max(0.0, cfg["max_daily_value_usd"] - daily_used),
-            account_cash=buying_power(funds))
+            account_cash=power)
 
         record.update({
             "prices": prices, "ledger_cash": round(ledger.cash, 2), "holdings": ledger.holdings,
@@ -483,6 +489,10 @@ def _main(args):
                 record["notes"].append(f"警告：{c} 实际持仓 {actual.get(c, 0)} 少于程序记录 {ledger.holdings[c]}，本次不下单")
                 plan.orders = []
                 mismatch = True
+
+        if power_bad:
+            plan.orders = []
+            mismatch = True
 
         pending = [o for o in ours if o.get("order_status") in OPEN_ORDER_STATUSES]
         # 当天只卖不买的情况（卖单没及时成交、买单留到下次）允许当天再跑一次把买单补上

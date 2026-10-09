@@ -679,3 +679,12 @@ def test_halt_file_blocks_orders_placed_after_start(sandbox, monkeypatch):
     monkeypatch.setattr(m, "wait_filled", halt_while_waiting)
     run(sandbox, "--execute")
     assert [s for _, s, *_ in FakeBroker.placed] == ["SELL"]
+
+
+def test_zero_buying_power_is_reported_as_error(sandbox):
+    # SDK 把不支持的资金字段报成 0 而不是 N/A 时，买单会被悄悄削成 0：要在日志里报"错误"，不能当作正常运行
+    FakeBroker.funds_seq = [{"cash": 2000.0, "us_cash": 0.0, "usd_net_cash_power": 0.0, "power": 0.0,
+                             "total_assets": 2000.0}]
+    assert run(sandbox, "--execute") == 1
+    assert FakeBroker.placed == []
+    assert any(n.startswith("错误") and "可用资金" in n for n in last_log(sandbox)["notes"])
