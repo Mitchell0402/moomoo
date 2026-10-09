@@ -530,3 +530,21 @@ def test_portfolios_can_be_turned_off(sandbox):
     edit_config(sandbox, "  portfolios: true ", "  portfolios: false ")
     run(sandbox, "--execute")
     assert "nasdaq_100" not in last_log(sandbox)["strategies"]
+
+
+def test_corrupt_state_stops_trading(sandbox):
+    (sandbox / "state.json").write_text('{"peak', encoding="utf-8")
+    assert run(sandbox, "--execute") == 1
+    assert FakeBroker.placed == []
+    notes = last_log(sandbox)["notes"]
+    assert any(n.startswith("错误") and "状态文件" in n for n in notes)
+    assert (sandbox / "state.json").read_text(encoding="utf-8") == '{"peak'
+
+
+def test_corrupt_state_recovers_from_backup(sandbox):
+    (sandbox / "state.json").write_text('{"peak', encoding="utf-8")
+    (sandbox / "state.json.bak").write_text(json.dumps({"peak_value": 3000}), encoding="utf-8")
+    assert run(sandbox, "--execute") == 0
+    log = last_log(sandbox)
+    assert log["drawdown"] > 0.3
+    assert any(n.startswith("警告") and "备份" in n for n in log["notes"])

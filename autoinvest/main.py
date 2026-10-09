@@ -24,6 +24,7 @@ from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
 from . import backup, baseline, guards, portfolios
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
+from .statefile import StateError, load_state, save_state
 from .strategy import Ledger, build_ledger, plan_rebalance
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,13 +41,6 @@ def load_config(path: Path) -> dict:
     if abs(total - 1) > 1e-6:
         sys.exit(f"targets 权重加起来应为 1，现在是 {total}")
     return cfg
-
-
-def load_state(path: Path) -> dict:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
 
 
 def write_log(log_dir: Path, record: dict):
@@ -286,7 +280,15 @@ def main(argv=None):
         write_log(log_dir, record)
         return 0
 
-    state = load_state(state_path)
+    try:
+        state, state_notes = load_state(state_path)
+    except StateError as e:
+        # 回撤高点这类风险状态丢了就不能当作第一次运行继续交易
+        record["notes"].append(f"错误：状态文件无法读取，本次不交易：{e}")
+        print(json.dumps(record, ensure_ascii=False, indent=2))
+        write_log(log_dir, record)
+        return 1
+    record["notes"] += state_notes
     bench_targets = cfg["targets"]
     g = guards.settings(cfg)
     b = baseline.settings(cfg)
@@ -468,7 +470,7 @@ def main(argv=None):
         else:
             record["planned_orders"] = [{"code": o.code, "side": o.side, "qty": o.qty, "price": o.price}
                                         for o in plan.orders]
-        state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        save_state(state_path, state)
 
         if use_signal:
             status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
