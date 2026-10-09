@@ -21,7 +21,7 @@ from pathlib import Path
 import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
-from . import backup, baseline, guards
+from . import backup, baseline, guards, portfolios
 from .claude_signal import resolve_targets, whitelist
 from .strategies import stock_weight
 from .strategy import Ledger, build_ledger, plan_rebalance
@@ -148,6 +148,44 @@ def update_intraday_shadow(state: dict, bars: list, price_now: float, budget: fl
     if opens and today >= acct["start"]:
         value *= price_now / opens[0] * (1 - cost)
     return round(value, 2)
+
+
+def safe_prices(broker, codes: list[str], notes: list[str]) -> dict:
+    """一次查不到时逐个查，拿不到价格的代码（比如 Claude 写错的股票代码）跳过并记一条备注。"""
+    if not codes:
+        return {}
+    try:
+        return broker.prices(codes)
+    except BrokerError:
+        out = {}
+        for c in codes:
+            try:
+                out.update(broker.prices([c]))
+            except BrokerError as e:
+                notes.append(f"对照账户拿不到 {c} 的价格：{e}")
+        return out
+
+
+def run_portfolios(broker, state: dict, budget: float, today: str, band: float, rebalance_today: bool,
+                   record: dict) -> dict:
+    """更多对照组合（见 portfolios.py）：Claude 选股、行业轮动、固定组合。出错只记备注，不影响实际账户。"""
+    picks, notes = portfolios.load_picks(ROOT / "signals" / "shadows.json")
+    month = today[:7]
+    momentum = None
+    acct = (state.get("portfolios") or {}).get("sector_momentum")
+    if rebalance_today and (acct is None or acct.get("tag") != month):
+        # 行业动量每月只算一次，平时不查这 11 个行业 ETF 的 K 线
+        try:
+            closes = broker.daily_closes(portfolios.SECTORS, portfolios.MOMENTUM_DAYS + 5)
+            momentum = portfolios.momentum_top({c: [p for _, p in v] for c, v in closes.items()})
+        except BrokerError as e:
+            notes.append(f"行业动量这次没有调仓：{e}")
+    prices = safe_prices(broker, portfolios.needed_codes(state, picks)
+                         + (list(momentum) if momentum else []), notes)
+    values, more = portfolios.update(state, prices, picks, momentum, month, budget, today, band, rebalance_today)
+    record["notes"] += notes + more
+    record["portfolios"] = portfolios.holdings(state, prices)
+    return values
 
 
 def value_shadows(state: dict, sh_cfg: dict, prices: dict, kinds: list) -> dict:
@@ -398,10 +436,12 @@ def main(argv=None):
                         record["orders"].append({"order_id": oid, "code": o.code, "side": o.side,
                                                  "qty": o.qty, "price": o.price})
                 applied = True
+            rebalance_today = False
             if applied and market_open:
                 # 只有真正在交易时段执行过，才把今天的目标记为"当前目标"，也才推进对照线
                 state["targets"] = targets
                 # 一天可能运行好几次，对照账户每天只在第一次调仓
+                rebalance_today = state.get("shadow_day") != today
                 if sh_cfg.get("strategies") and state.get("shadow_day") != today:
                     update_shadows(state, sh_cfg, closes, prices, cfg["budget_usd"], today)
                     if base is not None:
@@ -420,6 +460,9 @@ def main(argv=None):
                             float(sh_cfg.get("intraday_cost", 0.0005)))
                     except BrokerError as e:
                         record["notes"].append(f"日内对照这次没有更新：{e}")
+                if sh_cfg.get("portfolios", True):
+                    values.update(run_portfolios(broker, state, cfg["budget_usd"], today,
+                                                 float(sh_cfg.get("band", 0.05)), rebalance_today, record))
                 record["strategies"] = values
                 record["benchmark_value"] = values.get(sh_cfg.get("benchmark", "fixed_60_40"))
         else:
@@ -430,7 +473,8 @@ def main(argv=None):
         if use_signal:
             status = {k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
-                                                 "strategies", "guards", "ledger_mode", "baseline")}
+                                                 "strategies", "guards", "ledger_mode", "baseline",
+                                                 "portfolios")}
             status["current_targets"] = state.get("targets") or bench_targets
             status["signal_rules"] = {k: sig_cfg[k] for k in ("groups", "stock_min", "stock_max",
                                                               "max_daily_change", "max_age_days")}

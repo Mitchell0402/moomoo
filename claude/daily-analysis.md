@@ -18,6 +18,7 @@
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
    - `signal_rules`：你必须遵守的边界。`mode` 为 `baseline` 时，`allowed_ranges` 是股票、债券、黄金各自合计今天允许的 [下限, 上限]（已经叠加了护栏）
    - `baseline`：今天的趋势状态 `regime`（above / below / unknown）、基准比例 `targets`
+   - `portfolios`：Claude 选股（`claude_stocks`）、Claude 行业轮动（`claude_sectors`）和规则版行业动量（`sector_momentum`）对照账户现在的持仓比例、上次调仓依据（`since`）和价值
    - `strategies`：各对照策略的虚拟账户价值，`baseline` 是规则基准本身，`intraday` 是日内交易对照（开盘买收盘卖，只用来回答日内交易值不值得做，和你的决定无关）
    - `guards`、`guard_rules`：代码里的风险护栏。`guards.trend.below` 为 true 表示 SCHB 低于约 10 个月均线，此时股票合计上限是 `guards.stock_cap`；`guards.drawdown_brake` 为 true 表示回撤已超过刹车线，不能再加股票
    - `notes`：上一次运行的备注，包括你上一份指令是否被拒绝及原因、护栏有没有动手
@@ -45,7 +46,7 @@
 
 **按需加查：** 财报季期间，查一次大型科技公司和银行财报对整体市场的影响；某一项出现异常（比如数据大幅偏离预期、利差突然扩大）时，可以再搜一次跟进。
 
-**不要查：** 单只股票的普通新闻、分析师目标价、加密货币、社交媒体、论坛和自媒体观点。
+**不要查：** 单只股票的普通新闻、分析师目标价、加密货币、社交媒体、论坛和自媒体观点（每周选股那天的额外预算除外，见下面“每周选股和行业轮动”）。
 
 **可靠来源：** 美联储、BLS、BEA、美国财政部、CME 等官方网站，Reuters、AP、Bloomberg、WSJ、FT、CNBC、MarketWatch、Barron's。同一件事只引用一个来源。
 
@@ -105,8 +106,32 @@ Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库�
 
 ## 提交
 
-把 `signals/latest.json` 和 `signals/YYYY-MM-DD.json` 直接提交并推送到 `main` 分支，提交信息写 `signal YYYY-MM-DD`。不要修改仓库里的其他文件。
+把 `signals/latest.json` 和 `signals/YYYY-MM-DD.json`（选股那天再加上 `signals/shadows.json`）直接提交并推送到 `main` 分支，提交信息写 `signal YYYY-MM-DD`。不要修改仓库里的其他文件。
+
+## 每周选股和行业轮动（只用于模拟对照，不碰真实账户）
+
+`signals/shadows.json` 不存在，或者里面的 `date` 早于今天 5 天以上时（通常是每周一），在写完当天指令之后再做这件事。它只决定两个虚拟 2000 美元对照账户怎么配，用来检验"Claude 灵活选股或选行业能不能跑赢大盘"，和真实账户无关。
+
+写 `signals/shadows.json`（覆盖旧的）：
+
+```json
+{
+  "date": "YYYY-MM-DD",
+  "claude_stocks": {"targets": {"US.AAPL": 0.15, "US.JPM": 0.10, "...": 0.10}, "rationale": "中文 3~5 句：为什么选这些"},
+  "claude_sectors": {"targets": {"US.XLK": 0.30, "US.XLV": 0.20, "...": 0.10}, "rationale": "中文 3~5 句"}
+}
+```
+
+- `claude_stocks`：5 到 10 只在美国上市的普通股，市值 100 亿美元以上，代码写成 `US.代码`；单只最多 20%，合计不超过 1（差额是现金）。不要选 ETF、杠杆或反向产品、加密货币相关股票。
+- `claude_sectors`：只能用 XLK、XLV、XLF、XLE、XLY、XLP、XLI、XLU、XLB、XLRE、XLC 这 11 个行业 ETF，至少 2 个，单个最多 50%，合计不超过 1。
+- 目标是未来 1 到 3 个月跑赢标普 500（股票）或跑赢等权行业（行业）。参考 `portfolios` 里上周的持仓，没有新理由就不要大换，换手越少越好。
+- 额外预算：最多 6 次搜索、打开 3 篇网页，可以查个股的财报、指引和估值，来源要求和上面一样。在 rationale 末尾注明用了几次。
+- 不合规的那一部分会被程序拒绝（日志里有原因），账户继续持有上周的。写完自己核对：
+
+  ```
+  python -c "import json; from autoinvest.portfolios import validate_picks; d=json.load(open('signals/shadows.json')); print({k: validate_picks(k, d[k]['targets']) or '通过' for k in ('claude_stocks', 'claude_sectors')})"
+  ```
 
 ## 每周五额外做一件事
 
-在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、日内对照（`strategies.intraday`）和全仓股票（`strategies.fixed_100`）的对比（一两句话，说明日内到目前为止是赚是亏）、下周需要关注的事件。一起提交。
+在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、日内对照（`strategies.intraday`）和全仓股票（`strategies.fixed_100`）的对比（一两句话，说明日内到目前为止是赚是亏）、Claude 选股和行业轮动对标普（`fixed_100`）和规则版行业动量（`sector_momentum`）的对比、所有对照策略里本周表现最好和最差的各一个、下周需要关注的事件。一起提交。

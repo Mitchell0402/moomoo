@@ -50,6 +50,9 @@ STRATEGY_DESC = {
 try:  # 对照策略的说明和交易程序共用一份
     from autoinvest.strategies import STRATEGIES as _S
     STRATEGY_DESC.update(_S)
+    from autoinvest.portfolios import DESCRIPTIONS as _D, TITLES as _T
+    STRATEGY_DESC.update(_D)
+    STRATEGY_NAMES.update(_T)
 except Exception:  # noqa: BLE001 看板不能因为这个起不来
     pass
 
