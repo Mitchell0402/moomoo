@@ -28,7 +28,8 @@ def simulate(kind, stock_r, bond_r, warmup=13, lag=LAG):
     for rs, rb in zip(stock_r, bond_r):
         si.append(si[-1] * (1 + rs))
         bi.append(bi[-1] * (1 + rb))
-    w = stock_weight(kind, si[:warmup + 1], bi[:warmup + 1]) or 0.6
+    w = stock_weight(kind, si[:warmup + 1], bi[:warmup + 1])
+    w = 0.6 if w is None else w   # 0% 股票是合法的目标，不能当成"没有"
     s, b = w, 1 - w
     path, trades = [], 0
     for t in range(warmup, len(stock_r)):
