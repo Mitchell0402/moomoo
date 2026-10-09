@@ -25,10 +25,20 @@ def test_load_picks_skips_only_the_bad_part(tmp_path):
     path = tmp_path / "shadows.json"
     path.write_text(json.dumps({"date": "2026-10-09", "claude_stocks": {"targets": STOCKS},
                                 "claude_sectors": {"targets": {"US.XLK": 1.0}}}), encoding="utf-8")
-    picks, notes = pf.load_picks(path)
+    picks, notes = pf.load_picks(tmp_path)
     assert picks == {"claude_stocks": {"date": "2026-10-09", "targets": STOCKS}}
     assert len(notes) == 1 and "行业 ETF" in notes[0]
-    assert pf.load_picks(tmp_path / "missing.json") == ({}, [])
+    assert pf.load_picks(tmp_path / "missing") == ({}, [])
+
+
+def test_daily_picks_have_their_own_file_and_date(tmp_path):
+    (tmp_path / "shadows.json").write_text(json.dumps({"date": "2026-10-05", "claude_stocks": {"targets": STOCKS}}),
+                                           encoding="utf-8")
+    (tmp_path / "shadows-daily.json").write_text(json.dumps({"date": "2026-10-09",
+                                                             "claude_stocks_daily": {"targets": STOCKS}}),
+                                                 encoding="utf-8")
+    picks, _ = pf.load_picks(tmp_path)
+    assert picks["claude_stocks"]["date"] == "2026-10-05" and picks["claude_stocks_daily"]["date"] == "2026-10-09"
 
 
 def test_momentum_picks_top_three():
@@ -48,12 +58,12 @@ PRICES = {"US.QQQM": 200.0, "US.SSO": 90.0, "US.SCHB": 25.0, "US.SCHF": 22.0, "U
 def test_fixed_portfolios_buy_and_claude_waits_in_cash():
     state = {}
     v, notes = pf.update(state, PRICES, {}, None, "2026-10", 2000, "2026-10-09", 0.05, True)
-    assert notes == [] and v["nasdaq_100"] == 2000.0 and v["claude_stocks"] == 2000.0
-    assert state["portfolios"]["nasdaq_100"]["units"] == {"US.QQQM": 10.0}
+    assert notes == [] and v["nasdaq_100"] == 1999.0 and v["claude_stocks"] == 2000.0  # 买入扣 0.05%
+    assert state["portfolios"]["nasdaq_100"]["units"] == {"US.QQQM": 1999.0 / 200}
     assert state["portfolios"]["claude_stocks"]["units"] == {}
     # 纳指涨 10%：只估值，不是调仓日
     v, _ = pf.update(state, {**PRICES, "US.QQQM": 220.0}, {}, None, "2026-10", 2000, "2026-10-09", 0.05, False)
-    assert v["nasdaq_100"] == 2200.0
+    assert v["nasdaq_100"] == round(1999.0 / 200 * 220, 2)
 
 
 def test_claude_picks_rebalance_only_when_date_changes():
@@ -61,16 +71,18 @@ def test_claude_picks_rebalance_only_when_date_changes():
     picks = {"claude_stocks": {"date": "2026-10-09", "targets": STOCKS}}
     pf.update(state, PRICES, picks, None, "2026-10", 2000, "2026-10-09", 0.05, True)
     acct = state["portfolios"]["claude_stocks"]
-    assert acct["tag"] == "2026-10-09" and acct["units"]["US.AAPL"] == 400 / 250
+    assert acct["tag"] == "2026-10-09" and acct["units"]["US.AAPL"] == 1999 * 0.2 / 250
     # AAPL 翻倍：同一份指令不再调仓，一直持有
     up = {**PRICES, "US.AAPL": 500.0}
     v, _ = pf.update(state, up, picks, None, "2026-10", 2000, "2026-10-10", 0.05, True)
-    assert v["claude_stocks"] == 2400.0 and acct["units"]["US.AAPL"] == 400 / 250
+    assert v["claude_stocks"] == round(1999 * 1.2, 2) and acct["units"]["US.AAPL"] == 1999 * 0.2 / 250
     # 新的一周有新指令：按新比例调
     new = {"claude_stocks": {"date": "2026-10-16", "targets": {**STOCKS, "US.AAPL": 0.1}}}
     pf.update(state, up, new, None, "2026-10", 2000, "2026-10-16", 0.05, True)
     acct = state["portfolios"]["claude_stocks"]
-    assert acct["tag"] == "2026-10-16" and abs(acct["cash"] - 240.0) < 1e-6
+    value = pf.value(acct, up)
+    assert acct["tag"] == "2026-10-16" and abs(acct["cash"] - 0.1 * value) < 1e-6
+    assert value < 1999 * 1.2  # 换仓扣了成本
 
 
 def test_missing_price_skips_rebalance_and_keeps_last_value():
@@ -80,7 +92,7 @@ def test_missing_price_skips_rebalance_and_keeps_last_value():
     no_xom = {c: p for c, p in PRICES.items() if c != "US.XOM"}
     new = {"claude_stocks": {"date": "2026-10-16", "targets": STOCKS}}
     v, notes = pf.update(state, no_xom, new, None, "2026-10", 2000, "2026-10-16", 0.05, True)
-    assert v["claude_stocks"] == 2000.0 and state["portfolios"]["claude_stocks"]["tag"] == "2026-10-09"
+    assert v["claude_stocks"] == 1999.0 and state["portfolios"]["claude_stocks"]["tag"] == "2026-10-09"
     assert any("US.XOM" in n for n in notes)
 
 

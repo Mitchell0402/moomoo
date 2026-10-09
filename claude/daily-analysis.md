@@ -106,7 +106,7 @@ Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库�
 
 ## 提交
 
-把 `signals/latest.json` 和 `signals/YYYY-MM-DD.json`（选股那天再加上 `signals/shadows.json`）直接提交并推送到 `main` 分支，提交信息写 `signal YYYY-MM-DD`。不要修改仓库里的其他文件。
+把 `signals/latest.json`、`signals/YYYY-MM-DD.json`、`signals/shadows-daily.json`（每周选股那天再加上 `signals/shadows.json`）直接提交并推送到 `main` 分支，提交信息写 `signal YYYY-MM-DD`。不要修改仓库里的其他文件。
 
 ## 每周选股和行业轮动（只用于模拟对照，不碰真实账户）
 
@@ -132,6 +132,27 @@ Mitchell 在项目里说“停”“暂停交易”之类的话时，往仓库�
   python -c "import json; from autoinvest.portfolios import validate_picks; d=json.load(open('signals/shadows.json')); print({k: validate_picks(k, d[k]['targets']) or '通过' for k in ('claude_stocks', 'claude_sectors')})"
   ```
 
+## 每日选股（只用于模拟对照，不碰真实账户）
+
+每个交易日写完当天指令和每周选股之后，再写 `signals/shadows-daily.json`（覆盖旧的）。它决定虚拟账户"Claude 每日选股"怎么配，用来和每周选股比：天天看新闻换股，扣掉交易成本后，到底比每周换一次好还是差。
+
+```json
+{
+  "date": "YYYY-MM-DD",
+  "claude_stocks_daily": {"targets": {"US.AAPL": 0.15, "...": 0.10}, "rationale": "中文 2~3 句：今天改了什么、为什么，或者为什么不改"}
+}
+```
+
+- 规则和 `claude_stocks` 完全一样（5 到 10 只、单只最多 20%、合计不超过 1、市值 100 亿美元以上、不选 ETF）。
+- 参考 `portfolios.claude_stocks_daily` 现在的持仓。只有当天的新闻或数据给了明确理由才换，没有就原样照抄昨天的 targets 并在 rationale 里说"不变"。每买卖 1 美元扣 0.05%，乱换会被成本拖累。
+- `date` 每天都要更新成今天，否则程序认为没有新指令。
+- 额外预算：最多 3 次搜索，可以和当天其他搜索的结果共用。
+- 写完自己核对：
+
+  ```
+  python -c "import json; from autoinvest.portfolios import validate_picks; d=json.load(open('signals/shadows-daily.json')); print(validate_picks('claude_stocks_daily', d['claude_stocks_daily']['targets']) or '通过')"
+  ```
+
 ## 每周五额外做一件事
 
-在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、日内对照（`strategies.intraday`）和全仓股票（`strategies.fixed_100`）的对比（一两句话，说明日内到目前为止是赚是亏）、Claude 选股和行业轮动对标普（`fixed_100`）和规则版行业动量（`sector_momentum`）的对比、所有对照策略里本周表现最好和最差的各一个、下周需要关注的事件。一起提交。
+在 `reports/YYYY-MM-DD.md` 写一份周报：本周的调整和理由、本账户与规则基准（`strategies.baseline`）和 60/40 对照线的收益对比、日内对照（`strategies.intraday`）和全仓股票（`strategies.fixed_100`）的对比（一两句话，说明日内到目前为止是赚是亏）、Claude 选股、每日选股和行业轮动对标普（`fixed_100`）和规则版行业动量（`sector_momentum`）的对比、所有对照策略里本周表现最好和最差的各一个、下周需要关注的事件。一起提交。

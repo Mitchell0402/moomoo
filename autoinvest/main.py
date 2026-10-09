@@ -169,7 +169,7 @@ def safe_prices(broker, codes: list[str], notes: list[str]) -> dict:
 def run_portfolios(broker, state: dict, budget: float, today: str, band: float, rebalance_today: bool,
                    record: dict) -> dict:
     """更多对照组合（见 portfolios.py）：Claude 选股、行业轮动、固定组合。出错只记备注，不影响实际账户。"""
-    picks, notes = portfolios.load_picks(ROOT / "signals" / "shadows.json")
+    picks, notes = portfolios.load_picks(ROOT / "signals")
     month = today[:7]
     momentum = None
     acct = (state.get("portfolios") or {}).get("sector_momentum")

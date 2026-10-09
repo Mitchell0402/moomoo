@@ -5,9 +5,12 @@
 - 行业动量（sector_momentum）：每月第一次运行时，买过去约 6 个月涨得最多的 3 个行业 ETF，各 1/3。
 - Claude 组合（claude_stocks、claude_sectors）：Claude 每周写一次 signals/shadows.json，
   选股票或行业 ETF 和比例；指令日期一变就按新指令调仓，之前一直持有。还没有指令时拿着现金。
+- Claude 每日选股（claude_stocks_daily）：规则和 claude_stocks 一样，但写在 signals/shadows-daily.json，
+  Claude 每天都可以改，用来比较"勤换"和"每周换"哪个好。
+每次调仓按成交金额扣 COST（买卖价差和滑点的估计），这样换得勤的账户成本也算进去了。
 
 账户格式：{"start": 建立日期, "cash": 现金, "units": {代码: 份数}, "last": {代码: 最近一次价格}, "tag": 上次调仓依据}
-允许碎股，按当时价格成交，不算手续费和分红，所以和其它对照账户一样只适合互相比较。
+允许碎股，按当时价格成交，不算分红，所以和其它对照账户一样只适合互相比较。
 """
 from __future__ import annotations
 
@@ -26,13 +29,16 @@ FIXED = {
     "dividend": {"US.SCHD": 1.0},                         # 高股息股票
     "managed_futures": {"US.SCHB": 0.5, "US.SCHZ": 0.3, "US.DBMF": 0.2},  # 股债 + 20% 管理期货（趋势跟踪）
 }
-CLAUDE = {"claude_stocks": "个股", "claude_sectors": "行业 ETF"}
+CLAUDE = {"claude_stocks": "个股", "claude_sectors": "行业 ETF", "claude_stocks_daily": "每日个股"}
+PICK_FILES = ["shadows.json", "shadows-daily.json"]   # 在 signals/ 下；每个文件有自己的 date
+COST = 0.0005   # 每买卖 1 美元扣 0.05%
 NAMES = list(FIXED) + ["sector_momentum"] + list(CLAUDE)
 
 TITLES = {
     "nasdaq_100": "纳斯达克 100", "sp500_2x": "2 倍杠杆标普", "three_fund": "三基金组合",
     "permanent": "永久组合", "dividend": "高股息", "managed_futures": "股债+管理期货",
     "sector_momentum": "行业动量", "claude_stocks": "Claude 选股", "claude_sectors": "Claude 行业轮动",
+    "claude_stocks_daily": "Claude 每日选股",
 }
 DESCRIPTIONS = {
     "nasdaq_100": "100% QQQM（纳斯达克 100），科技股比重高，比全市场更激进",
@@ -44,6 +50,7 @@ DESCRIPTIONS = {
     "sector_momentum": "每月买过去约 6 个月涨得最多的 3 个行业 ETF，各 1/3",
     "claude_stocks": "Claude 每周挑 5 到 10 只大盘股，单只最多 20%",
     "claude_sectors": "Claude 每周在 11 个行业 ETF 里选配，单个行业最多 50%",
+    "claude_stocks_daily": "和 Claude 选股规则一样，但每天都可以换，扣交易成本，看勤换有没有用",
 }
 
 MOMENTUM_DAYS = 126   # 约 6 个月
@@ -59,9 +66,9 @@ def validate_picks(kind: str, targets) -> list[str]:
     for c, w in targets.items():
         if not isinstance(w, (int, float)) or w <= 0:
             errors.append(f"{c} 的权重 {w} 无效")
-        elif kind == "claude_stocks" and (not STOCK_CODE.match(str(c)) or c in SECTORS):
+        elif kind.startswith("claude_stocks") and (not STOCK_CODE.match(str(c)) or c in SECTORS):
             errors.append(f"{c} 不是有效的美股代码")
-        elif kind == "claude_stocks" and w > 0.20 + 1e-9:
+        elif kind.startswith("claude_stocks") and w > 0.20 + 1e-9:
             errors.append(f"{c} 占 {w:.0%}，单只股票最多 20%")
         elif kind == "claude_sectors" and c not in SECTORS:
             errors.append(f"{c} 不在行业 ETF 名单里")
@@ -69,7 +76,7 @@ def validate_picks(kind: str, targets) -> list[str]:
             errors.append(f"{c} 占 {w:.0%}，单个行业最多 50%")
     if errors:
         return errors
-    if kind == "claude_stocks" and not 5 <= len(targets) <= 10:
+    if kind.startswith("claude_stocks") and not 5 <= len(targets) <= 10:
         errors.append(f"选了 {len(targets)} 只股票，要 5 到 10 只")
     if kind == "claude_sectors" and len(targets) < 2:
         errors.append("至少要选 2 个行业")
@@ -79,28 +86,31 @@ def validate_picks(kind: str, targets) -> list[str]:
     return errors
 
 
-def load_picks(path: Path) -> tuple[dict, list[str]]:
-    """读取 signals/shadows.json，返回 ({组合名: {"date", "targets"}}, 备注)。不合规的组合会被跳过。"""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {}, []
-    except json.JSONDecodeError as e:
-        return {}, [f"选股对照指令文件格式错误：{e}"]
-    date = str(data.get("date", ""))
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
-        return {}, ["选股对照指令文件缺少有效的 date"]
+def load_picks(folder: Path) -> tuple[dict, list[str]]:
+    """读取 signals/ 下的选股指令文件，返回 ({组合名: {"date", "targets"}}, 备注)。不合规的组合会被跳过。"""
     picks, notes = {}, []
-    for kind, label in CLAUDE.items():
-        part = data.get(kind)
-        if part is None:
+    for fname in PICK_FILES:
+        try:
+            data = json.loads((folder / fname).read_text(encoding="utf-8"))
+        except FileNotFoundError:
             continue
-        targets = part.get("targets") if isinstance(part, dict) else None
-        errors = validate_picks(kind, targets)
-        if errors:
-            notes.append(f"Claude 的{label}对照指令被拒绝，继续持有原来的：" + "；".join(errors))
-        else:
-            picks[kind] = {"date": date, "targets": {c: float(w) for c, w in targets.items()}}
+        except json.JSONDecodeError as e:
+            notes.append(f"选股对照指令 {fname} 格式错误：{e}")
+            continue
+        date = str(data.get("date", ""))
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+            notes.append(f"选股对照指令 {fname} 缺少有效的 date")
+            continue
+        for kind, label in CLAUDE.items():
+            part = data.get(kind)
+            if part is None or kind in picks:
+                continue
+            targets = part.get("targets") if isinstance(part, dict) else None
+            errors = validate_picks(kind, targets)
+            if errors:
+                notes.append(f"Claude 的{label}对照指令被拒绝，继续持有原来的：" + "；".join(errors))
+            else:
+                picks[kind] = {"date": date, "targets": {c: float(w) for c, w in targets.items()}}
     return picks, notes
 
 
@@ -137,6 +147,9 @@ def drift(acct: dict, targets: dict, prices: dict) -> float:
 def rebalance(acct: dict, targets: dict, prices: dict) -> None:
     """按现价把账户调成 targets，没分配的部分留作现金。调用前要确保持仓和目标的价格都在。"""
     v = value(acct, prices)
+    traded = sum(abs(v * targets.get(c, 0.0) - acct["units"].get(c, 0.0) * prices[c])
+                 for c in set(targets) | set(acct["units"]))
+    v -= traded * COST
     acct["units"] = {c: v * w / prices[c] for c, w in targets.items() if w > 0}
     acct["cash"] = v - sum(q * prices[c] for c, q in acct["units"].items())
     acct["last"] = {c: prices[c] for c in acct["units"]}
