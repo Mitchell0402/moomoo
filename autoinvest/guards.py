@@ -2,7 +2,7 @@
 
 1. 趋势护栏：股票 ETF（默认 SCHB）的价格低于约 10 个月（210 个交易日）均线时，
    股票合计最多 stock_max_below_trend（默认 40%）。回测里这条把最坏回撤从 35.8% 降到 21.4%。
-2. 回撤刹车：从高点回撤超过 drawdown_no_add（默认 20%）时，股票合计不能比上一次执行的目标更高。
+2. 回撤刹车：从高点回撤超过 drawdown_no_add（默认 15%，给 20% 的回撤上限留余量）时，股票合计不能比上一次执行的目标更高。
    （限制的是目标比例，不是实际股数：价格下跌后按原来的目标再平衡，仍可能买入少量股票。）
 
 超出上限的股票比例按原有比例挪到债券（bond_codes，不会挪到黄金）；目标里没有债券时放进 bond_code。
@@ -15,7 +15,7 @@ DEFAULTS = {
     "trend_code": "US.SCHB",
     "trend_days": 210,
     "stock_max_below_trend": 0.40,
-    "drawdown_no_add": 0.20,
+    "drawdown_no_add": 0.15,
     "stock_codes": ["US.SCHB", "US.SCHF"],
     "bond_codes": ["US.SCHZ", "US.SCHO"],
     "bond_code": "US.SCHZ",

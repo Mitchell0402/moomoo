@@ -24,7 +24,7 @@ cash_buffer: 0.02        # 留 2% 现金，防止价格变动导致买不起
 limit_slippage: 0.002    # 限价单比现价高（买）或低（卖）0.2%
 max_order_value_usd: 1500   # 单笔上限
 max_daily_value_usd: 2500   # 每天成交总额上限
-alert_drawdown: 0.25     # 从高点回撤超过 25% 时在日志里提醒（不会自动卖出）
+alert_drawdown: 0.15     # 从高点回撤超过 15% 时在日志里提醒（不会自动卖出）；回撤上限是 20%，提前提醒
 require_market_open: true   # 只在美股常规交易时段下单
 sell_fill_timeout_sec: 90   # 先卖后买：最多等卖单成交这么多秒，没成交就把买单留到下一次运行
 
@@ -40,7 +40,7 @@ cash_reserve_usd: 0      # account 模式下账户里留着不动的现金
 # US.GLDM = SPDR 黄金迷你 ETF
 baseline:
   enabled: true          # 规则基准；改成 false 回到旧模式（Claude 在 stock_min–stock_max 里自由调）
-  band: 0.10             # Claude 能把股票、债券、黄金各自的合计比基准多或少 10 个百分点
+  band: 0.05             # Claude 能把股票、债券、黄金各自的合计比基准多或少 5 个百分点
   gold_codes: [US.GLDM]
   above:                 # SCHB 在约 10 个月均线上方
     US.SCHB: 0.70
@@ -58,7 +58,7 @@ guards:
   trend_code: US.SCHB          # 用它判断趋势
   trend_days: 210              # 约 10 个月均线
   stock_max_below_trend: 0.40  # 价格低于均线时，股票合计最多 40%
-  drawdown_no_add: 0.20        # 从高点回撤超过 20% 时，不允许再加股票
+  drawdown_no_add: 0.15        # 从高点回撤超过 15% 时，不允许再加股票（回撤上限 20%，留余量）
   stock_codes: [US.SCHB, US.SCHF]
   bond_codes: [US.SCHZ, US.SCHO]
   bond_code: US.SCHZ           # 压下来的股票比例放到债券；目标里已有债券时按原有比例分
