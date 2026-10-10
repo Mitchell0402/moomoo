@@ -22,6 +22,13 @@ CODES = (["US.SCHB", "US.SCHZ", "US.SCHO", "US.SCHF", "US.GLDM"]
 def main(years: float = 3.0):
     codes = list(dict.fromkeys(CODES))
     broker = MoomooBroker()
+    try:
+        _export(broker, codes, years)
+    finally:
+        broker.close()   # 不关的话 OpenD 的线程会让进程写完文件也退不出来
+
+
+def _export(broker, codes: list[str], years: float):
     start = (dt.date.today() - dt.timedelta(days=int(365 * years))).isoformat()
     end = dt.date.today().isoformat()
     close, opens = {}, {}
