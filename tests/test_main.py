@@ -277,20 +277,20 @@ def test_baseline_below_trend_is_40_50_10(sandbox):
 
 def test_claude_tilt_within_band_is_used_without_daily_limit(sandbox):
     FakeBroker.closes = {"US.SCHB": history(20.0, 24.0)}
-    # 上一次是 60/40，今天直接写 80%：基准 70 ±10 以内，不受旧的每天 10 个百分点限制
-    enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHF": 0.10, "US.SCHZ": 0.10, "US.GLDM": 0.10})
+    # 上一次是 60/40，今天直接写 75%：基准 70 ±5 以内，不受旧的每天 10 个百分点限制
+    enable_signal(sandbox, {"US.SCHB": 0.70, "US.SCHF": 0.05, "US.SCHZ": 0.15, "US.GLDM": 0.10})
     run(sandbox, "--execute")
     log = last_log(sandbox)
-    assert log["signal"] and log["targets"]["US.SCHF"] == 0.10
+    assert log["signal"] and log["targets"]["US.SCHF"] == 0.05
     status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
     assert status["signal_rules"]["mode"] == "baseline"
-    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.6, 0.8]
+    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.65, 0.75]
     assert status["signal_rules"]["groups"]["gold"] == ["US.GLDM"]
     assert status["baseline"]["targets"]["US.GLDM"] == 0.10
 
 
 def test_claude_outside_band_falls_back_to_baseline(sandbox):
-    FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}  # 均线下方，股票只能 30–40%
+    FakeBroker.closes = {"US.SCHB": history(35.0, 30.0)}  # 均线下方，股票只能 35–40%
     enable_signal(sandbox, {"US.SCHB": 0.60, "US.SCHZ": 0.30, "US.GLDM": 0.10})
     run(sandbox, "--execute")
     log = last_log(sandbox)
@@ -298,7 +298,7 @@ def test_claude_outside_band_falls_back_to_baseline(sandbox):
     assert any("被拒绝" in n and "规则基准" in n for n in log["notes"])
     assert log["targets"]["US.SCHB"] == 0.40 and log["targets"]["US.SCHZ"] == 0.50
     status = json.loads((sandbox / "data" / "status.json").read_text(encoding="utf-8"))
-    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.3, 0.4]
+    assert status["signal_rules"]["allowed_ranges"]["stock"] == [0.35, 0.4]
 
 
 def test_old_config_without_baseline_section_gets_defaults(sandbox):
@@ -483,7 +483,7 @@ def test_drawdown_brake_lets_claude_move_the_cut_into_bonds(sandbox):
     run(sandbox, "--execute")
     log = last_log(sandbox)
     assert log["baseline"]["ranges"]["stock"] == [0.5, 0.5]
-    assert log["baseline"]["ranges"]["bond"] == [0.1, 0.5]
+    assert log["baseline"]["ranges"]["bond"] == [0.15, 0.45]
     assert log["signal"] and log["targets"]["US.SCHZ"] == 0.4
 
 

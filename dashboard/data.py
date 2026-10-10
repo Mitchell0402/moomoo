@@ -47,7 +47,7 @@ STRATEGY_NAMES = {
     "intraday": "日内交易",
 }
 STRATEGY_DESC = {
-    "actual": "Claude 每天在规则基准上下 10 个百分点内微调，程序真实下单",
+    "actual": "Claude 每天在规则基准上下 5 个百分点内微调，程序真实下单",
     "baseline": "SCHB 在 10 个月均线上方 70/20/10（股/债/金），下方 40/50/10，不含 Claude 的调整",
     "intraday": "每天开盘买入 SCHB、收盘全部卖出，晚上拿现金",
 }
