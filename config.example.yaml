@@ -34,6 +34,7 @@ sell_fill_timeout_sec: 90   # 先卖后买：最多等卖单成交这么多秒�
 #   auto    = 模拟盘用 orders，实盘用 account
 ledger: auto
 cash_reserve_usd: 0      # account 模式下账户里留着不动的现金
+cash_flow_min_usd: 100   # account 模式下，和上次相比不是买卖造成的现金变化超过这么多，才当作入金/取钱（更小的当作分红利息）
 
 # ---- 规则基准：每天按趋势算出基准仓位，Claude 只能在基准上下 band 以内调整 ----
 # 没有这一段时也按下面的默认值启用。趋势判断不了时（历史价格不够）用上面的 targets。

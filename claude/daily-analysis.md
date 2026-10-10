@@ -20,7 +20,8 @@
    - `current_targets`：上一次实际执行的目标比例
    - `holdings`、`weights`：当前持仓和实际权重
    - `managed_value`、`benchmark_value`：本账户和固定 60/40 对照线的价值
-   - `drawdown`：从高点的回撤
+   - `drawdown`：从高点的回撤，按单位净值算（往账户里加钱、取钱不影响它）
+   - `nav`、`net_deposits`：单位净值和累计净入金。`managed_value` 是账户的美元金额，加钱后会跳高，判断赚亏看 `nav`
    - `daily_closes`：白名单 ETF 最近约 120 个交易日的收盘价
    - `signal_rules`：你必须遵守的边界。`mode` 为 `baseline` 时，`allowed_ranges` 是股票、债券、黄金各自合计今天允许的 [下限, 上限]（已经叠加了护栏）
    - `baseline`：今天的趋势状态 `regime`（above / below / unknown）、基准比例 `targets`
@@ -90,7 +91,7 @@
 
 - 范围是按电脑昨天那次运行算的。如果 `baseline.regime` 今天翻转（SCHB 价格离均线很近时可能发生），你的指令会被拒绝、改用新基准，这是预期的。
 - `signal_rules.mode` 为 `legacy`（规则基准被关掉）时，改用旧规则：股票合计在 `stock_min` 到 `stock_max` 之间，和 `current_targets` 相比每天变动不超过 `max_daily_change`。
-- `drawdown` 超过 0.20 时，不要再提高股票比例（代码也会强制）。
+- `drawdown` 超过 0.15 时，不要再提高股票比例（代码也会强制）；回撤上限是 0.20。
 - 调整小于 `rebalance_band`（见 status.json）不会触发交易。没有足够理由时，直接写基准。
 - 不要因为一天的涨跌就大幅调整。
 - `sources` 最多列 5 个真正用到的链接。
