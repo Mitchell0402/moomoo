@@ -280,10 +280,15 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
     if value_now is None:
         value_now = status.get("managed_value")
     value_prev = value_of(prev_book, prev)
+    # 入金后用单位净值看回撤和收益（autoinvest/nav.py）；没有入金时 units = 1，单位净值就是账户价值
+    units = float(state.get("nav_units") or 1.0)
     if value_prev is None and csv_rows:
+        # strategies.csv 的 actual 是单位净值，乘上份数换回美元，今天的盈亏就不含今天存进来的钱
         older = [r for r in csv_rows if r["time"][:10] < qdate and r.get("actual")]
-        value_prev = float(older[-1]["actual"]) if older else None
-    peak = max([float(state.get("peak_value") or 0), value_now or 0]
+        value_prev = float(older[-1]["actual"]) * units if older else None
+    net_deposits = float(state.get("net_deposits") or 0.0)
+    nav_now = value_now / units if value_now and units > 0 else value_now
+    peak = max([float(state.get("peak_value") or 0), nav_now or 0]
                + [float(r["actual"]) for r in csv_rows if r.get("actual")])
     day_pnl = None if value_now is None or value_prev is None else value_now - value_prev
 
@@ -370,7 +375,7 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
     # ---- 历史
     history, daily = build_history(csv_rows, feed.get("spy_daily") or [], records, signals, groups,
                                    budget, qdate if live else None,
-                                   {"actual": value_now, **strat_now} if live else None,
+                                   {"actual": nav_now, **strat_now} if live else None,
                                    spy_q.get("last") if live else None)
 
     if live and daily and daily[0]["time"] == "实时":
@@ -379,7 +384,7 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
     # ---- 策略排行
     strategies = []
     for k in ["actual"] + [k for k in dict.fromkeys(list(shadows) + names)]:
-        v = value_now if k == "actual" else strat_now.get(k)
+        v = nav_now if k == "actual" else strat_now.get(k)
         if v is None:
             continue
         start = budget
@@ -454,7 +459,7 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
         alerts.append({"level": "warn", "text": f"今天 {first_run:%H:%M} 应该运行一次，但还没有运行记录（电脑睡眠、OpenD 没开或计划任务没跑）"})
     if feed.get("status") == "offline":
         alerts.append({"level": "info", "text": "没有连上 OpenD，显示的是最近一次程序运行时的数据"})
-    dd = 1 - value_now / peak if value_now and peak else 0.0
+    dd = 1 - nav_now / peak if nav_now and peak else 0.0
 
     return {
         "generated_at": now.isoformat(timespec="seconds"),
@@ -466,9 +471,10 @@ def assemble(root: Path, files: Files, feed: dict, git: dict, now: dt.datetime) 
         "feed": {k: feed.get(k) for k in ("status", "message", "updated_at", "source")},
         "account": {
             "value": r2(value_now), "prev_value": r2(value_prev), "day_pnl": r2(day_pnl), "day_pct": r2(acct_pct, 5),
-            "total_pnl": r2(value_now - budget) if value_now else None,
-            "total_return": r2(value_now / budget - 1, 5) if value_now else None,
-            "peak": r2(peak), "drawdown": r2(dd, 5), "cash": r2(cur_book["cash"]), "cash_weight": r2(cash_w, 4),
+            "total_pnl": r2(value_now - budget - net_deposits) if value_now else None,
+            "total_return": r2(nav_now / budget - 1, 5) if nav_now else None,
+            "net_deposits": r2(net_deposits),
+            "peak": r2(peak * units), "drawdown": r2(dd, 5), "cash": r2(cur_book["cash"]), "cash_weight": r2(cash_w, 4),
             "live": live, "as_of": feed.get("updated_at") if live else (records[-1]["time"] if records else None),
             "stock_weight": r2(sum(h["weight"] or 0 for h in holdings if h["group"] == "stock"), 4),
         },

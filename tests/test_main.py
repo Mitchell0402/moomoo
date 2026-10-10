@@ -392,6 +392,33 @@ def test_real_account_ledger_counts_dividend_cash(sandbox):
     assert FakeBroker.placed == []  # 偏离不到 5 个百分点
 
 
+def test_real_account_deposit_keeps_drawdown_and_comparison_honest(sandbox):
+    edit_config(sandbox, "trd_env: SIMULATE", "trd_env: REAL")
+    edit_config(sandbox, "real_money_confirmed: false", "real_money_confirmed: true")
+    FakeBroker.held = {"US.SCHB": 48, "US.SCHZ": 34}   # 1200 + 782
+    FakeBroker.cash = 118.0
+    run(sandbox, "--execute")
+    assert last_log(sandbox)["nav"] == 2100.0
+    # 股票跌 20%，同时存进 3000 美元：账户价值比高点高，但回撤要按单位净值算
+    FakeBroker.price_override = {"US.SCHB": 20.0}
+    FakeBroker.cash = 3118.0
+    FakeBroker.state = "CLOSED"
+    run(sandbox, "--execute")
+    log = last_log(sandbox)
+    assert log["external_flow"] == 3000.0
+    assert any("检测到入金 3000.00 美元" in n for n in log["notes"])
+    assert log["nav"] == pytest.approx(2100.0 - 48 * 5, abs=0.01)
+    assert log["drawdown"] == pytest.approx(240 / 2100, abs=1e-4)
+    state = json.loads((sandbox / "state-real.json").read_text(encoding="utf-8"))
+    assert state["net_deposits"] == 3000.0
+    # 对照排行里"我的账户"用单位净值，不会因为多存的钱跳到第一
+    rows = (sandbox / "logs" / "real" / "strategies.csv").read_text(encoding="utf-8").splitlines()
+    assert float(rows[-1].split(",")[1]) == pytest.approx(log["nav"])
+    # 再跑一次不会把同一笔钱再算一遍
+    run(sandbox, "--execute")
+    assert "external_flow" not in last_log(sandbox)
+
+
 def test_shadows_logged_once_per_day(sandbox):
     run(sandbox, "--execute")
     FakeBroker.placed = []

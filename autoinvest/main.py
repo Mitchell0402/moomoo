@@ -25,7 +25,7 @@ from pathlib import Path
 import yaml
 
 from .broker import OPEN_ORDER_STATUSES, OPEN_STATES, BrokerError, MoomooBroker
-from . import backup, baseline, guards, portfolios
+from . import backup, baseline, guards, nav, portfolios
 from .paths import log_dir_name
 from .runlock import LockBusy, other_host, run_lock
 from .claude_signal import resolve_targets, whitelist
@@ -103,7 +103,8 @@ def write_strategies(log_dir: Path, record: dict):
     elif len(lines) > 1 and lines[-1].startswith(record["time"][:10]):
         lines.pop()
     cols = lines[0].split(",")
-    vals = {"time": record["time"], "actual": str(record.get("managed_value", "")),
+    # actual 用单位净值：没有入金时就是账户价值，入金后不会因为多了钱而跳高，能和 2000 美元起步的对照组合比
+    vals = {"time": record["time"], "actual": str(record.get("nav", record.get("managed_value", ""))),
             **{n: str(v) for n, v in record["strategies"].items()}}
     lines.append(",".join(vals.get(c, "") for c in cols))
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -423,9 +424,17 @@ def _main(args):
 
         today = dt.date.today().isoformat()
         value_now = ledger.cash + sum(ledger.holdings[c] * prices[c] for c in codes)
-        peak = max(float(state.get("peak_value", 0)), value_now)
-        drawdown = 1 - value_now / peak if peak else 0.0
-        state["peak_value"] = round(peak, 2)
+        # 回撤按单位净值算：往实盘账户加钱、取钱不会掩盖亏损或被当成回撤（见 autoinvest/nav.py）
+        nv = nav.update(state, value_now, ledger.cash, ledger.holdings, prices, mode_ledger == "account",
+                        float(cfg.get("cash_flow_min_usd", nav.DEFAULT_MIN_FLOW)),
+                        settled=not any(o.get("order_status") in OPEN_ORDER_STATUSES for o in ours))
+        drawdown = nv["drawdown"]
+        record.update({"nav": nv["nav"], "nav_units": nv["units"], "peak_nav": nv["peak"],
+                       "net_deposits": state.get("net_deposits", 0.0)})
+        if nv["flow"]:
+            record["external_flow"] = nv["flow"]
+            record["notes"].append(f"检测到{'入金' if nv['flow'] > 0 else '取钱'} {abs(nv['flow']):.2f} 美元："
+                                   f"不算收益，回撤和对照排行按单位净值 {nv['nav']:.2f} 计算")
 
         # 趋势：盘中拿到的 K 线可能已含今天这根，去掉后再接上实时价
         trend_hist = [p for d, p in closes.get(g["trend_code"], []) if d < today] + [prices[g["trend_code"]]]
@@ -589,6 +598,7 @@ def _main(args):
         if use_signal:
             status = {"host": socket.gethostname()}
             status.update({k: record.get(k) for k in ("time", "trd_env", "managed_value", "benchmark_value",
+                                                 "nav", "net_deposits",
                                                  "drawdown", "holdings", "weights", "targets", "notes", "orders",
                                                  "strategies", "guards", "ledger_mode", "baseline",
                                                  "portfolios")})
