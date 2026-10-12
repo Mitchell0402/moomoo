@@ -24,7 +24,7 @@ cash_buffer: 0.02        # 留 2% 现金，防止价格变动导致买不起
 limit_slippage: 0.002    # 限价单比现价高（买）或低（卖）0.2%
 max_order_value_usd: 1500   # 单笔上限
 max_daily_value_usd: 2500   # 每天成交总额上限
-alert_drawdown: 0.25     # 从高点回撤超过 25% 时在日志里提醒（不会自动卖出）
+alert_drawdown: 0.15     # 从高点回撤超过 25% 时在日志里提醒（不会自动卖出）
 require_market_open: true   # 只在美股常规交易时段下单
 
 log_dir: logs
