@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-13",
+  "date": "2026-10-14",
   "targets": {
     "US.SCHB": 0.67,
     "US.SCHF": 0.0,
@@ -7,11 +7,12 @@
     "US.SCHO": 0.15,
     "US.GLDM": 0.1
   },
-  "rationale": "昨天标普基本持平（-0.1%），纳指跌 0.4%，原因是存储芯片股下跌（美光 -3.9%）；道指涨 0.4%，VIX 约 15.4，SCHB 仍在 10 个月均线上方约 8%。今天早上大银行财报分化：摩根大通盘前跌约 3%（收入不及预期），高盛涨约 2.5%、花旗超预期，没有指向整体市场的单一方向。10 年期美债收益率回落到约 5.20%（昨天 5.24%），油价小幅回落（WTI 约 92.6 美元、布伦特约 105 美元），但沙特机场仍被袭击；市场押 10 月不加息约 8 成、12 月加息约 7~9 成。明天（10-14）公布 9 月 CPI，是本周最大的风险，数据出来之前没有理由加码或减码，所以维持昨天的配置：股票 67%（略低于基准 70%）、综合债 SCHZ 8%、1–3 年国债 SCHO 15%、黄金 10%（美元接近 18 个月高位压着黄金）。风险：CPI 偏低、利率回落时，这个略低配股票的组合会小幅跑输基准。档位：标准；搜索 0 次，打开 4 篇。",
+  "rationale": "昨天标普基本持平（-0.02%）、道指 -0.35%、纳指 -0.15%，银行财报反应偏弱（花旗 -5.3%、富国 -2.6%、摩根大通 -0.3%），芯片股继续下跌（应用材料 -7%、美光 -4.6%），原因是 AI 投入放缓和中国竞争的担忧；VIX 约 15.3，SCHB 仍在 10 个月均线上方约 8%。今天早上 8:30 公布 9 月 CPI，我写指令的时候还没出来：市场预计总体通胀约 3.7%（8 月 3.4%）、核心环比约 0.2%，油价（WTI 约 95 美元）推高总体数字，纽约联储威廉姆斯说今年可能还要再加一次息，12 月加息概率升到约 88%，10 年期美债收益率约 5.20%。数据落地前没有理由加码或减码，所以维持昨天的配置：股票 67%（略低于基准 70%）、综合债 SCHZ 8%、1–3 年国债 SCHO 15%、黄金 10%（黄金降到约 4140 美元，美元接近 18 个月高位压着它）。风险：核心 CPI 偏热（环比 0.4% 以上）时股票和债券会同跌，偏冷时这个略低配股票的组合会小幅跑输基准。档位：加查（今天公布 CPI）；搜索 3 次，打开 5 篇。",
   "sources": [
     "https://tradingeconomics.com/united-states/stock-market",
     "https://tradingeconomics.com/united-states/government-bond-yield",
     "https://tradingeconomics.com/commodity/crude-oil",
-    "https://tradingeconomics.com/commodity/gold"
+    "https://tradingeconomics.com/commodity/gold",
+    "https://admiralmarkets.com/analytics/traders-blog/us-cpi-preview-september-2026-forecasts-and-the-core-cpi-outlook"
   ]
 }
