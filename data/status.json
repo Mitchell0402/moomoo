@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-15T12:30:01",
+ "time": "2026-10-15T14:30:01",
  "trd_env": "SIMULATE",
- "managed_value": 1994.04,
- "benchmark_value": 2001.55,
- "nav": 1994.04,
+ "managed_value": 1995.12,
+ "benchmark_value": 2002.43,
+ "nav": 1995.12,
  "net_deposits": 0.0,
- "drawdown": 0.0089,
+ "drawdown": 0.0084,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -18,8 +18,8 @@
   "US.SCHB": 0.651,
   "US.SCHZ": 0.0783,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1438,
-  "US.GLDM": 0.0823
+  "US.SCHO": 0.1437,
+  "US.GLDM": 0.0824
  },
  "targets": {
   "US.SCHB": 0.67,
@@ -34,32 +34,32 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1984.7,
-  "fixed_80_20": 1993.13,
-  "fixed_60_40": 2001.55,
-  "fixed_50_50": 2005.76,
-  "trend_100": 1984.7,
-  "trend_80_30": 1993.13,
-  "dual_momentum": 1984.7,
-  "vol_target": 1993.3,
-  "risk_parity": 2016.31,
-  "baseline": 1997.09,
-  "intraday": 1991.0,
-  "nasdaq_100": 1926.75,
-  "sp500_2x": 1960.69,
-  "three_fund": 1990.22,
-  "permanent": 2005.88,
-  "dividend": 2068.53,
-  "managed_futures": 1989.55,
-  "sector_momentum": 2009.09,
-  "claude_stocks": 2060.53,
-  "claude_sectors": 2013.9,
-  "claude_stocks_daily": 2058.05
+  "fixed_100": 1985.71,
+  "fixed_80_20": 1994.07,
+  "fixed_60_40": 2002.43,
+  "fixed_50_50": 2006.6,
+  "trend_100": 1985.71,
+  "trend_80_30": 1994.07,
+  "dual_momentum": 1985.71,
+  "vol_target": 1994.24,
+  "risk_parity": 2017.07,
+  "baseline": 1998.3,
+  "intraday": 1992.01,
+  "nasdaq_100": 1929.73,
+  "sp500_2x": 1962.23,
+  "three_fund": 1991.59,
+  "permanent": 2007.79,
+  "dividend": 2064.29,
+  "managed_futures": 1989.66,
+  "sector_momentum": 2003.63,
+  "claude_stocks": 2056.6,
+  "claude_sectors": 2012.92,
+  "claude_stocks_daily": 2054.87
  },
  "guards": {
   "trend": {
-   "price": 29.505,
-   "sma": 27.753,
+   "price": 29.52,
+   "sma": 27.7531,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.3141,
-    "US.XLE": 0.3377,
-    "US.XLV": 0.3482
+    "US.XLK": 0.315,
+    "US.XLE": 0.3375,
+    "US.XLV": 0.3475
    },
-   "value": 2009.09
+   "value": 2003.63
   },
   "claude_stocks": {
    "since": "2026-10-14",
    "weights": {
-    "US.JPM": 0.1487,
-    "US.GOOGL": 0.1356,
-    "US.XOM": 0.1282,
-    "US.LLY": 0.1351,
-    "US.MSFT": 0.1187,
-    "US.RTX": 0.1092,
-    "US.WMT": 0.1133,
-    "US.PG": 0.1112
+    "US.JPM": 0.1492,
+    "US.GOOGL": 0.1363,
+    "US.XOM": 0.1281,
+    "US.LLY": 0.1347,
+    "US.MSFT": 0.1188,
+    "US.RTX": 0.1089,
+    "US.WMT": 0.1131,
+    "US.PG": 0.1109
    },
-   "value": 2060.53
+   "value": 2056.6
   },
   "claude_sectors": {
    "since": "2026-10-14",
    "weights": {
-    "US.XLE": 0.2466,
-    "US.XLF": 0.2532,
-    "US.XLV": 0.2062,
-    "US.XLI": 0.1489,
-    "US.XLK": 0.145
+    "US.XLE": 0.2459,
+    "US.XLF": 0.2543,
+    "US.XLV": 0.2054,
+    "US.XLI": 0.1494,
+    "US.XLK": 0.1451
    },
-   "value": 2013.9
+   "value": 2012.92
   },
   "claude_stocks_daily": {
    "since": "2026-10-15",
    "weights": {
-    "US.JPM": 0.1,
-    "US.GOOGL": 0.1391,
-    "US.XOM": 0.1299,
-    "US.LLY": 0.131,
-    "US.MSFT": 0.1212,
-    "US.RTX": 0.1097,
-    "US.WMT": 0.1086,
-    "US.PG": 0.1096,
-    "US.GS": 0.0509
+    "US.JPM": 0.1003,
+    "US.GOOGL": 0.1398,
+    "US.XOM": 0.1297,
+    "US.LLY": 0.1305,
+    "US.MSFT": 0.1213,
+    "US.RTX": 0.1094,
+    "US.WMT": 0.1084,
+    "US.PG": 0.1092,
+    "US.GS": 0.0513
    },
-   "value": 2058.05
+   "value": 2054.87
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-15",
-    29.505
+    29.52
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-15",
-    22.3
+    22.3075
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-15",
-    26.91
+    26.955
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-15",
-    23.89
+    23.895
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-15",
-    82.075
+    82.225
    ]
   ]
  }
