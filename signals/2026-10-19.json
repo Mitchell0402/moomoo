@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-19",
+  "targets": {
+    "US.SCHB": 0.67,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.08,
+    "US.SCHO": 0.15,
+    "US.GLDM": 0.1
+  },
+  "rationale": "上周五道指 -0.3%、罗素 2000 -1.7%，整周纳指约 -4.5%、标普约 -2.0%，页面把原因归到 AI 投资和云服务商债务压力的担忧（CoreWeave 一周跌约 25%），银行财报后反应平淡；今天盘前期货反弹，标普约 +0.5%、纳指 100 约 +1.2%，AI 基础设施股领涨。周末霍尔木兹海峡有三艘油轮受损，伊朗称海峡仍受其管制，WTI 涨到约 101 美元（一周约 +10%）、布伦特约 108 美元，是通胀的新风险。10 年期美债收益率约 5.10%、2 年期约 4.74%，市场押 10 月 28 日按兵不动约 84%、12 月加息约 77%（沃什没有表态，克利夫兰联储哈马克警告通胀预期恶化可能要更激进加息）；黄金约 4,165 美元，美元指数约 101.8，VIX 约 18.7。SCHB 仍在 10 个月均线上方约 5%，趋势没破，上周的下跌还不足以触发防守，也没有理由在反弹日加码，所以维持股票 67%（略低于基准 70%）、综合债 SCHZ 8%、1–3 年国债 SCHO 15%、黄金 10%。风险：油价继续上冲会推高通胀预期和收益率，股债同跌；本周有大型科技财报，周二新屋开工、周五 PMI 和密歇根信心是数据看点。档位：标准；搜索 1 次，打开 7 篇数据页（超出标准档的 4 篇网页上限，下次收紧）。",
+  "sources": [
+    "https://tradingeconomics.com/united-states/stock-market",
+    "https://tradingeconomics.com/united-states/government-bond-yield",
+    "https://tradingeconomics.com/commodity/crude-oil",
+    "https://tradingeconomics.com/commodity/gold",
+    "https://tradingeconomics.com/united-states/calendar"
+  ]
+}
