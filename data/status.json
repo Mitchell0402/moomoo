@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-19T14:30:01",
+ "time": "2026-10-19T16:10:00",
  "trd_env": "SIMULATE",
- "managed_value": 1989.24,
- "benchmark_value": 1995.35,
- "nav": 1989.24,
+ "managed_value": 1988.78,
+ "benchmark_value": 1994.76,
+ "nav": 1988.78,
  "net_deposits": 0.0,
- "drawdown": 0.0113,
+ "drawdown": 0.0115,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,10 +15,10 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6505,
+  "US.SCHB": 0.6504,
   "US.SCHZ": 0.0782,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1441,
+  "US.SCHO": 0.1442,
   "US.GLDM": 0.0824
  },
  "targets": {
@@ -30,36 +30,36 @@
  },
  "notes": [
   "采用 Claude 2026-10-19 的指令",
-  "最大偏离 1.9%，未超过 5%，今天不交易"
+  "最大偏离 2.0%，未超过 5%，今天不交易"
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1978.31,
-  "fixed_80_20": 1986.83,
-  "fixed_60_40": 1995.35,
-  "fixed_50_50": 1999.61,
-  "trend_100": 1978.31,
-  "trend_80_30": 1986.83,
-  "dual_momentum": 1978.31,
-  "vol_target": 1987.0,
-  "risk_parity": 2010.28,
-  "baseline": 1991.24,
-  "intraday": 1967.84,
-  "nasdaq_100": 1915.39,
-  "sp500_2x": 1948.99,
-  "three_fund": 1985.34,
-  "permanent": 2000.59,
-  "dividend": 2073.66,
-  "managed_futures": 1986.65,
-  "sector_momentum": 2004.97,
-  "claude_stocks": 2065.83,
-  "claude_sectors": 2015.89,
-  "claude_stocks_daily": 2062.75
+  "fixed_100": 1977.64,
+  "fixed_80_20": 1986.2,
+  "fixed_60_40": 1994.76,
+  "fixed_50_50": 1999.05,
+  "trend_100": 1977.64,
+  "trend_80_30": 1986.2,
+  "dual_momentum": 1977.64,
+  "vol_target": 1986.38,
+  "risk_parity": 2009.77,
+  "baseline": 1990.54,
+  "intraday": 1967.85,
+  "nasdaq_100": 1914.84,
+  "sp500_2x": 1945.37,
+  "three_fund": 1984.8,
+  "permanent": 1999.78,
+  "dividend": 2070.04,
+  "managed_futures": 1986.36,
+  "sector_momentum": 2002.76,
+  "claude_stocks": 2057.83,
+  "claude_sectors": 2012.74,
+  "claude_stocks_daily": 2055.33
  },
  "guards": {
   "trend": {
-   "price": 29.4099,
-   "sma": 27.7863,
+   "price": 29.4,
+   "sma": 27.7862,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.312,
-    "US.XLE": 0.3439,
-    "US.XLV": 0.3441
+    "US.XLK": 0.3123,
+    "US.XLE": 0.3443,
+    "US.XLV": 0.3434
    },
-   "value": 2004.97
+   "value": 2002.76
   },
   "claude_stocks": {
    "since": "2026-10-19",
    "weights": {
-    "US.JPM": 0.1484,
-    "US.GOOGL": 0.1394,
-    "US.XOM": 0.1302,
-    "US.LLY": 0.1297,
-    "US.MSFT": 0.1198,
-    "US.RTX": 0.1114,
+    "US.JPM": 0.1485,
+    "US.GOOGL": 0.1399,
+    "US.XOM": 0.1305,
+    "US.LLY": 0.129,
+    "US.MSFT": 0.1202,
+    "US.RTX": 0.111,
     "US.WMT": 0.1105,
-    "US.PG": 0.1104
+    "US.PG": 0.1103
    },
-   "value": 2065.83
+   "value": 2057.83
   },
   "claude_sectors": {
    "since": "2026-10-19",
    "weights": {
-    "US.XLE": 0.2497,
-    "US.XLF": 0.2503,
-    "US.XLV": 0.2,
-    "US.XLI": 0.1504,
-    "US.XLK": 0.1496
+    "US.XLE": 0.2501,
+    "US.XLF": 0.2501,
+    "US.XLV": 0.1997,
+    "US.XLI": 0.1503,
+    "US.XLK": 0.1498
    },
-   "value": 2015.89
+   "value": 2012.74
   },
   "claude_stocks_daily": {
    "since": "2026-10-19",
    "weights": {
     "US.JPM": 0.099,
-    "US.GOOGL": 0.1394,
-    "US.XOM": 0.1302,
-    "US.LLY": 0.1298,
-    "US.MSFT": 0.1198,
-    "US.RTX": 0.1114,
+    "US.GOOGL": 0.1399,
+    "US.XOM": 0.1305,
+    "US.LLY": 0.129,
+    "US.MSFT": 0.1202,
+    "US.RTX": 0.111,
     "US.WMT": 0.1105,
-    "US.PG": 0.1104,
-    "US.GS": 0.0494
+    "US.PG": 0.1103,
+    "US.GS": 0.0497
    },
-   "value": 2062.75
+   "value": 2055.33
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-19",
-    29.4099
+    29.4
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-19",
-    22.235
+    22.23
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-19",
-    26.915
+    26.91
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-19",
-    23.89
+    23.9
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-19",
-    81.9956
+    81.94
    ]
   ]
  }
