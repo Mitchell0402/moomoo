@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-20T14:30:01",
+ "time": "2026-10-20T16:10:00",
  "trd_env": "SIMULATE",
- "managed_value": 1993.61,
- "benchmark_value": 2000.68,
- "nav": 1993.61,
+ "managed_value": 1993.31,
+ "benchmark_value": 2001.06,
+ "nav": 1993.31,
  "net_deposits": 0.0,
- "drawdown": 0.0091,
+ "drawdown": 0.0093,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -16,10 +16,10 @@
  },
  "weights": {
   "US.SCHB": 0.6516,
-  "US.SCHZ": 0.0781,
+  "US.SCHZ": 0.0782,
   "US.SCHF": 0.0,
   "US.SCHO": 0.1438,
-  "US.GLDM": 0.0819
+  "US.GLDM": 0.0818
  },
  "targets": {
   "US.SCHB": 0.67,
@@ -34,31 +34,31 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1985.87,
-  "fixed_80_20": 1993.28,
-  "fixed_60_40": 2000.68,
-  "fixed_50_50": 2004.38,
-  "trend_100": 1985.87,
-  "trend_80_30": 1993.28,
-  "dual_momentum": 1985.87,
-  "vol_target": 1993.43,
-  "risk_parity": 2013.66,
-  "baseline": 1995.94,
-  "intraday": 1977.74,
-  "nasdaq_100": 1916.59,
-  "sp500_2x": 1958.74,
-  "three_fund": 1992.21,
-  "permanent": 2003.06,
-  "dividend": 2094.52,
-  "managed_futures": 1989.87,
-  "sector_momentum": 2017.83,
-  "claude_stocks": 2063.62,
-  "claude_sectors": 2026.68,
-  "claude_stocks_daily": 2061.84
+  "fixed_100": 1985.71,
+  "fixed_80_20": 1993.39,
+  "fixed_60_40": 2001.06,
+  "fixed_50_50": 2004.9,
+  "trend_100": 1985.71,
+  "trend_80_30": 1993.39,
+  "dual_momentum": 1985.71,
+  "vol_target": 1993.55,
+  "risk_parity": 2014.52,
+  "baseline": 1995.79,
+  "intraday": 1976.24,
+  "nasdaq_100": 1913.61,
+  "sp500_2x": 1959.02,
+  "three_fund": 1992.12,
+  "permanent": 2003.14,
+  "dividend": 2097.24,
+  "managed_futures": 1989.9,
+  "sector_momentum": 2019.34,
+  "claude_stocks": 2066.24,
+  "claude_sectors": 2029.09,
+  "claude_stocks_daily": 2064.44
  },
  "guards": {
   "trend": {
-   "price": 29.5224,
+   "price": 29.52,
    "sma": 27.8049,
    "below": false
   },
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.3102,
-    "US.XLE": 0.3413,
-    "US.XLV": 0.3485
+    "US.XLK": 0.309,
+    "US.XLE": 0.3423,
+    "US.XLV": 0.3487
    },
-   "value": 2017.83
+   "value": 2019.34
   },
   "claude_stocks": {
    "since": "2026-10-19",
    "weights": {
-    "US.JPM": 0.1489,
-    "US.GOOGL": 0.138,
-    "US.XOM": 0.1292,
-    "US.LLY": 0.1336,
-    "US.MSFT": 0.1196,
-    "US.RTX": 0.1103,
-    "US.WMT": 0.1098,
-    "US.PG": 0.1106
+    "US.JPM": 0.1486,
+    "US.GOOGL": 0.1378,
+    "US.XOM": 0.1297,
+    "US.LLY": 0.133,
+    "US.MSFT": 0.1193,
+    "US.RTX": 0.1113,
+    "US.WMT": 0.1092,
+    "US.PG": 0.111
    },
-   "value": 2063.62
+   "value": 2066.24
   },
   "claude_sectors": {
    "since": "2026-10-19",
    "weights": {
-    "US.XLE": 0.248,
-    "US.XLF": 0.251,
+    "US.XLE": 0.2487,
+    "US.XLF": 0.2511,
     "US.XLV": 0.2028,
-    "US.XLI": 0.1493,
-    "US.XLK": 0.1489
+    "US.XLI": 0.1492,
+    "US.XLK": 0.1482
    },
-   "value": 2026.68
+   "value": 2029.09
   },
   "claude_stocks_daily": {
    "since": "2026-10-20",
    "weights": {
-    "US.JPM": 0.0996,
-    "US.GOOGL": 0.1393,
-    "US.XOM": 0.1318,
-    "US.LLY": 0.1293,
-    "US.MSFT": 0.1209,
-    "US.RTX": 0.1084,
-    "US.WMT": 0.1102,
-    "US.PG": 0.1108,
-    "US.GS": 0.0498
+    "US.JPM": 0.0994,
+    "US.GOOGL": 0.1391,
+    "US.XOM": 0.1322,
+    "US.LLY": 0.1287,
+    "US.MSFT": 0.1207,
+    "US.RTX": 0.1094,
+    "US.WMT": 0.1096,
+    "US.PG": 0.1112,
+    "US.GS": 0.0497
    },
-   "value": 2061.84
+   "value": 2064.44
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-20",
-    29.5224
+    29.52
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-20",
-    22.2569
+    22.27
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-20",
-    27.085
+    27.06
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-20",
-    23.895
+    23.89
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-20",
-    81.595
+    81.483
    ]
   ]
  }
