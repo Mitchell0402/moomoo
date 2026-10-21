@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-21T12:30:00",
+ "time": "2026-10-21T14:30:01",
  "trd_env": "SIMULATE",
- "managed_value": 2000.15,
- "benchmark_value": 2007.44,
- "nav": 2000.15,
+ "managed_value": 2003.47,
+ "benchmark_value": 2010.08,
+ "nav": 2003.47,
  "net_deposits": 0.0,
- "drawdown": 0.0059,
+ "drawdown": 0.0042,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,10 +15,10 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6525,
-  "US.SCHZ": 0.078,
+  "US.SCHB": 0.6529,
+  "US.SCHZ": 0.0779,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1434,
+  "US.SCHO": 0.1431,
   "US.GLDM": 0.0817
  },
  "targets": {
@@ -34,32 +34,32 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1995.13,
-  "fixed_80_20": 2001.28,
-  "fixed_60_40": 2007.44,
-  "fixed_50_50": 2010.51,
-  "trend_100": 1995.13,
-  "trend_80_30": 2001.28,
-  "dual_momentum": 1995.13,
-  "vol_target": 2001.41,
-  "risk_parity": 2018.22,
-  "baseline": 2003.34,
-  "intraday": 1978.92,
-  "nasdaq_100": 1932.97,
-  "sp500_2x": 1973.44,
-  "three_fund": 2000.0,
-  "permanent": 2007.98,
-  "dividend": 2094.83,
-  "managed_futures": 1995.19,
-  "sector_momentum": 2023.75,
-  "claude_stocks": 2051.12,
-  "claude_sectors": 2036.59,
-  "claude_stocks_daily": 2051.49
+  "fixed_100": 1999.84,
+  "fixed_80_20": 2004.96,
+  "fixed_60_40": 2010.08,
+  "fixed_50_50": 2012.64,
+  "trend_100": 1999.84,
+  "trend_80_30": 2004.96,
+  "dual_momentum": 1999.84,
+  "vol_target": 2005.07,
+  "risk_parity": 2019.06,
+  "baseline": 2006.92,
+  "intraday": 1983.59,
+  "nasdaq_100": 1938.34,
+  "sp500_2x": 1983.96,
+  "three_fund": 2002.35,
+  "permanent": 2009.91,
+  "dividend": 2093.62,
+  "managed_futures": 1997.59,
+  "sector_momentum": 2027.18,
+  "claude_stocks": 2052.4,
+  "claude_sectors": 2038.96,
+  "claude_stocks_daily": 2053.26
  },
  "guards": {
   "trend": {
-   "price": 29.66,
-   "sma": 27.8233,
+   "price": 29.73,
+   "sma": 27.8236,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.3126,
-    "US.XLE": 0.3421,
+    "US.XLK": 0.3134,
+    "US.XLE": 0.3413,
     "US.XLV": 0.3453
    },
-   "value": 2023.75
+   "value": 2027.18
   },
   "claude_stocks": {
    "since": "2026-10-19",
    "weights": {
-    "US.JPM": 0.1492,
-    "US.GOOGL": 0.1358,
-    "US.XOM": 0.1305,
-    "US.LLY": 0.1324,
-    "US.MSFT": 0.1202,
-    "US.RTX": 0.1108,
-    "US.WMT": 0.1103,
-    "US.PG": 0.1107
+    "US.JPM": 0.1494,
+    "US.GOOGL": 0.1365,
+    "US.XOM": 0.1303,
+    "US.LLY": 0.1328,
+    "US.MSFT": 0.1203,
+    "US.RTX": 0.1102,
+    "US.WMT": 0.1098,
+    "US.PG": 0.1106
    },
-   "value": 2051.12
+   "value": 2052.4
   },
   "claude_sectors": {
    "since": "2026-10-19",
    "weights": {
-    "US.XLE": 0.2482,
-    "US.XLF": 0.2517,
-    "US.XLV": 0.2005,
-    "US.XLI": 0.1498,
-    "US.XLK": 0.1497
+    "US.XLE": 0.2478,
+    "US.XLF": 0.2514,
+    "US.XLV": 0.2006,
+    "US.XLI": 0.15,
+    "US.XLK": 0.1502
    },
-   "value": 2036.59
+   "value": 2038.96
   },
   "claude_stocks_daily": {
    "since": "2026-10-21",
    "weights": {
-    "US.JPM": 0.0999,
-    "US.GOOGL": 0.1401,
-    "US.XOM": 0.1296,
-    "US.LLY": 0.1299,
-    "US.MSFT": 0.1202,
-    "US.RTX": 0.1103,
-    "US.WMT": 0.1105,
-    "US.PG": 0.1094,
-    "US.GS": 0.0502
+    "US.JPM": 0.1,
+    "US.GOOGL": 0.1408,
+    "US.XOM": 0.1293,
+    "US.LLY": 0.1302,
+    "US.MSFT": 0.1203,
+    "US.RTX": 0.1097,
+    "US.WMT": 0.11,
+    "US.PG": 0.1093,
+    "US.GS": 0.0505
    },
-   "value": 2051.49
+   "value": 2053.26
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-21",
-    29.66
+    29.73
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-21",
-    22.2899
+    22.285
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-21",
-    27.24
+    27.25
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-21",
-    23.895
+    23.8925
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-21",
-    81.725
+    81.875
    ]
   ]
  }
