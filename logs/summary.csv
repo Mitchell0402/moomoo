@@ -61,3 +61,4 @@ time,mode,managed_value,benchmark_value,drawdown,max_drift,orders,note
 2026-10-23T10:30:00,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
 2026-10-23T12:30:01,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
 2026-10-23T14:30:01,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
+2026-10-23T16:10:00,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
