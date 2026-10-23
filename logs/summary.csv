@@ -60,3 +60,4 @@ time,mode,managed_value,benchmark_value,drawdown,max_drift,orders,note
 2026-10-22T16:10:00,execute,1983.53,2000.3,0.0141,0.0197,0,采用 Claude 2026-10-22 的指令 | 最大偏离 2.0%，未超过 5%，今天不交易
 2026-10-23T10:30:00,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
 2026-10-23T12:30:01,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
+2026-10-23T14:30:01,execute,,,,,0,错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录
