@@ -1,0 +1,16 @@
+{
+  "time": "2026-10-23T12:30:01",
+  "mode": "execute",
+  "notes": [
+    "错误：连不上 OpenD（127.0.0.1:11111）：[WinError 10061] No connection could be made because the target machine actively refused it。请确认 OpenD 已打开并已登录"
+  ],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.6,
+    "US.SCHZ": 0.4,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.0
+  }
+}
