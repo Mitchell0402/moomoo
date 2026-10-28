@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-28T12:30:01",
+ "time": "2026-10-28T14:30:01",
  "trd_env": "SIMULATE",
- "managed_value": 1996.51,
- "benchmark_value": 2010.82,
- "nav": 1996.51,
+ "managed_value": 1995.55,
+ "benchmark_value": 2009.94,
+ "nav": 1995.55,
  "net_deposits": 0.0,
- "drawdown": 0.0077,
+ "drawdown": 0.0082,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -18,7 +18,7 @@
   "US.SCHB": 0.653,
   "US.SCHZ": 0.0786,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1438,
+  "US.SCHO": 0.1439,
   "US.GLDM": 0.08
  },
  "targets": {
@@ -34,31 +34,31 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1993.11,
-  "fixed_80_20": 2001.97,
-  "fixed_60_40": 2010.82,
-  "fixed_50_50": 2015.25,
-  "trend_100": 1993.11,
-  "trend_80_30": 2001.97,
-  "dual_momentum": 1993.11,
-  "vol_target": 2002.15,
-  "risk_parity": 2026.35,
-  "baseline": 1999.75,
-  "intraday": 1983.04,
-  "nasdaq_100": 1925.2,
-  "sp500_2x": 1965.99,
-  "three_fund": 2001.99,
-  "permanent": 2004.0,
-  "dividend": 2123.54,
-  "managed_futures": 1999.68,
-  "sector_momentum": 2044.11,
-  "claude_stocks": 2070.62,
-  "claude_sectors": 2051.13,
-  "claude_stocks_daily": 2071.95
+  "fixed_100": 1992.03,
+  "fixed_80_20": 2000.99,
+  "fixed_60_40": 2009.94,
+  "fixed_50_50": 2014.42,
+  "trend_100": 1992.03,
+  "trend_80_30": 2000.99,
+  "dual_momentum": 1992.03,
+  "vol_target": 2001.17,
+  "risk_parity": 2025.64,
+  "baseline": 1998.7,
+  "intraday": 1981.97,
+  "nasdaq_100": 1926.07,
+  "sp500_2x": 1963.48,
+  "three_fund": 2001.18,
+  "permanent": 2003.14,
+  "dividend": 2117.33,
+  "managed_futures": 1999.42,
+  "sector_momentum": 2043.43,
+  "claude_stocks": 2067.74,
+  "claude_sectors": 2048.64,
+  "claude_stocks_daily": 2069.07
  },
  "guards": {
   "trend": {
-   "price": 29.63,
+   "price": 29.6139,
    "sma": 27.8991,
    "below": false
   },
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.3129,
-    "US.XLE": 0.3428,
-    "US.XLV": 0.3444
+    "US.XLK": 0.3135,
+    "US.XLE": 0.3419,
+    "US.XLV": 0.3446
    },
-   "value": 2044.11
+   "value": 2043.43
   },
   "claude_stocks": {
    "since": "2026-10-26",
    "weights": {
-    "US.JPM": 0.1516,
-    "US.GOOGL": 0.1412,
-    "US.XOM": 0.1302,
-    "US.LLY": 0.1298,
-    "US.MSFT": 0.1198,
+    "US.JPM": 0.1515,
+    "US.GOOGL": 0.1415,
+    "US.XOM": 0.1297,
+    "US.LLY": 0.1299,
+    "US.MSFT": 0.12,
     "US.RTX": 0.1111,
-    "US.WMT": 0.1072,
-    "US.PG": 0.109
+    "US.WMT": 0.1077,
+    "US.PG": 0.1087
    },
-   "value": 2070.62
+   "value": 2067.74
   },
   "claude_sectors": {
    "since": "2026-10-26",
    "weights": {
-    "US.XLE": 0.2478,
-    "US.XLF": 0.2488,
-    "US.XLV": 0.1981,
-    "US.XLI": 0.1516,
-    "US.XLK": 0.1537
+    "US.XLE": 0.2474,
+    "US.XLF": 0.2487,
+    "US.XLV": 0.1984,
+    "US.XLI": 0.1514,
+    "US.XLK": 0.1541
    },
-   "value": 2051.13
+   "value": 2048.64
   },
   "claude_stocks_daily": {
    "since": "2026-10-28",
    "weights": {
     "US.JPM": 0.1005,
-    "US.GOOGL": 0.1391,
-    "US.XOM": 0.1308,
-    "US.LLY": 0.1293,
-    "US.MSFT": 0.1194,
+    "US.GOOGL": 0.1394,
+    "US.XOM": 0.1302,
+    "US.LLY": 0.1295,
+    "US.MSFT": 0.1196,
     "US.RTX": 0.1108,
-    "US.WMT": 0.1096,
-    "US.PG": 0.1101,
+    "US.WMT": 0.1101,
+    "US.PG": 0.1098,
     "US.GS": 0.0502
    },
-   "value": 2071.95
+   "value": 2069.07
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-28",
-    29.63
+    29.6139
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-28",
-    22.4164
+    22.41
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-28",
-    27.21
+    27.185
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-28",
-    23.93
+    23.925
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-28",
-    79.91
+    79.8379
    ]
   ]
  }
