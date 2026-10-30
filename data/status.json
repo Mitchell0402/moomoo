@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-10-30T10:30:01",
+ "time": "2026-10-30T12:30:01",
  "trd_env": "SIMULATE",
- "managed_value": 1972.21,
- "benchmark_value": 1995.8,
- "nav": 1972.21,
+ "managed_value": 1970.01,
+ "benchmark_value": 1993.83,
+ "nav": 1970.01,
  "net_deposits": 0.0,
- "drawdown": 0.0198,
+ "drawdown": 0.0209,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,10 +15,10 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6506,
-  "US.SCHZ": 0.0799,
+  "US.SCHB": 0.6504,
+  "US.SCHZ": 0.08,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1461,
+  "US.SCHO": 0.1462,
   "US.GLDM": 0.0783
  },
  "targets": {
@@ -34,32 +34,32 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1961.5,
-  "fixed_80_20": 1978.65,
-  "fixed_60_40": 1995.8,
-  "fixed_50_50": 2004.38,
-  "trend_100": 1961.5,
-  "trend_80_30": 1978.65,
-  "dual_momentum": 1961.5,
-  "vol_target": 1979.0,
-  "risk_parity": 2025.87,
-  "baseline": 1973.05,
-  "intraday": 1978.27,
-  "nasdaq_100": 1849.84,
-  "sp500_2x": 1897.46,
-  "three_fund": 1985.74,
-  "permanent": 1984.38,
-  "dividend": 2162.86,
-  "managed_futures": 1981.88,
-  "sector_momentum": 2044.47,
-  "claude_stocks": 2078.13,
-  "claude_sectors": 2059.54,
-  "claude_stocks_daily": 2076.08
+  "fixed_100": 1958.81,
+  "fixed_80_20": 1976.32,
+  "fixed_60_40": 1993.83,
+  "fixed_50_50": 2002.58,
+  "trend_100": 1958.81,
+  "trend_80_30": 1976.32,
+  "dual_momentum": 1958.81,
+  "vol_target": 1976.68,
+  "risk_parity": 2024.52,
+  "baseline": 1970.64,
+  "intraday": 1975.56,
+  "nasdaq_100": 1846.22,
+  "sp500_2x": 1894.63,
+  "three_fund": 1983.91,
+  "permanent": 1981.32,
+  "dividend": 2168.88,
+  "managed_futures": 1979.79,
+  "sector_momentum": 2041.32,
+  "claude_stocks": 2081.99,
+  "claude_sectors": 2057.92,
+  "claude_stocks_daily": 2078.7
  },
  "guards": {
   "trend": {
-   "price": 29.16,
-   "sma": 27.9292,
+   "price": 29.1201,
+   "sma": 27.929,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-10",
    "weights": {
-    "US.XLK": 0.2971,
-    "US.XLE": 0.3473,
-    "US.XLV": 0.3556
+    "US.XLK": 0.2962,
+    "US.XLE": 0.3472,
+    "US.XLV": 0.3567
    },
-   "value": 2044.47
+   "value": 2041.32
   },
   "claude_stocks": {
    "since": "2026-10-26",
    "weights": {
-    "US.JPM": 0.1504,
-    "US.GOOGL": 0.1218,
-    "US.XOM": 0.1322,
+    "US.JPM": 0.1503,
+    "US.GOOGL": 0.1219,
+    "US.XOM": 0.1312,
     "US.LLY": 0.1429,
-    "US.MSFT": 0.1179,
-    "US.RTX": 0.1124,
-    "US.WMT": 0.111,
-    "US.PG": 0.1113
+    "US.MSFT": 0.1181,
+    "US.RTX": 0.1131,
+    "US.WMT": 0.1116,
+    "US.PG": 0.1109
    },
-   "value": 2078.13
+   "value": 2081.99
   },
   "claude_sectors": {
    "since": "2026-10-26",
    "weights": {
-    "US.XLE": 0.2501,
-    "US.XLF": 0.2498,
-    "US.XLV": 0.2037,
-    "US.XLI": 0.151,
-    "US.XLK": 0.1454
+    "US.XLE": 0.2498,
+    "US.XLF": 0.2503,
+    "US.XLV": 0.2042,
+    "US.XLI": 0.1509,
+    "US.XLK": 0.1448
    },
-   "value": 2059.54
+   "value": 2057.92
   },
   "claude_stocks_daily": {
    "since": "2026-10-30",
    "weights": {
     "US.JPM": 0.12,
-    "US.GOOGL": 0.08,
-    "US.XOM": 0.13,
-    "US.LLY": 0.13,
-    "US.MSFT": 0.14,
-    "US.RTX": 0.11,
-    "US.WMT": 0.11,
-    "US.PG": 0.11,
-    "US.GS": 0.07
+    "US.GOOGL": 0.0801,
+    "US.XOM": 0.1292,
+    "US.LLY": 0.1301,
+    "US.MSFT": 0.1402,
+    "US.RTX": 0.1108,
+    "US.WMT": 0.1106,
+    "US.PG": 0.1096,
+    "US.GS": 0.0694
    },
-   "value": 2076.08
+   "value": 2078.7
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-10-30",
-    29.16
+    29.1201
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-10-30",
-    22.525
+    22.515
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-10-30",
-    26.975
+    26.96
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-10-30",
-    24.0077
+    24.0
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-10-30",
-    77.255
+    77.115
    ]
   ]
  }
