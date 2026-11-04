@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-11-04T15:44:59",
+ "time": "2026-11-04T16:10:01",
  "trd_env": "SIMULATE",
- "managed_value": 1992.48,
- "benchmark_value": 2009.15,
- "nav": 1992.48,
+ "managed_value": 1991.81,
+ "benchmark_value": 2008.54,
+ "nav": 1991.81,
  "net_deposits": 0.0,
- "drawdown": 0.0097,
+ "drawdown": 0.01,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,11 +15,11 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6514,
+  "US.SCHB": 0.6512,
   "US.SCHZ": 0.0791,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1442,
-  "US.GLDM": 0.0806
+  "US.SCHO": 0.1443,
+  "US.GLDM": 0.0807
  },
  "targets": {
   "US.SCHB": 0.67,
@@ -34,32 +34,32 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1984.35,
-  "fixed_80_20": 1996.75,
-  "fixed_60_40": 2009.15,
-  "fixed_50_50": 2015.35,
-  "trend_100": 1984.35,
-  "trend_80_30": 1996.75,
-  "dual_momentum": 1984.35,
-  "vol_target": 1997.01,
-  "risk_parity": 2030.89,
-  "baseline": 1996.4,
-  "intraday": 1964.03,
-  "nasdaq_100": 1843.69,
-  "sp500_2x": 1941.75,
-  "three_fund": 2004.5,
-  "permanent": 2006.85,
-  "dividend": 2187.28,
-  "managed_futures": 1979.67,
-  "sector_momentum": 2015.88,
-  "claude_stocks": 2106.95,
-  "claude_sectors": 2036.88,
-  "claude_stocks_daily": 2106.87
+  "fixed_100": 1983.02,
+  "fixed_80_20": 1995.78,
+  "fixed_60_40": 2008.54,
+  "fixed_50_50": 2014.91,
+  "trend_100": 1983.02,
+  "trend_80_30": 1995.78,
+  "dual_momentum": 1983.02,
+  "vol_target": 1996.04,
+  "risk_parity": 2030.9,
+  "baseline": 1995.73,
+  "intraday": 1964.05,
+  "nasdaq_100": 1844.53,
+  "sp500_2x": 1939.52,
+  "three_fund": 2004.19,
+  "permanent": 2007.56,
+  "dividend": 2189.14,
+  "managed_futures": 1979.09,
+  "sector_momentum": 2017.67,
+  "claude_stocks": 2102.22,
+  "claude_sectors": 2039.32,
+  "claude_stocks_daily": 2102.74
  },
  "guards": {
   "trend": {
-   "price": 29.4998,
-   "sma": 27.972,
+   "price": 29.48,
+   "sma": 27.9719,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,51 +95,51 @@
   "sector_momentum": {
    "since": "2026-11",
    "weights": {
-    "US.XLV": 0.3462,
-    "US.XLE": 0.3085,
-    "US.XLF": 0.3453
+    "US.XLV": 0.3453,
+    "US.XLE": 0.3093,
+    "US.XLF": 0.3454
    },
-   "value": 2015.88
+   "value": 2017.67
   },
   "claude_stocks": {
    "since": "2026-11-02",
    "weights": {
-    "US.JPM": 0.153,
-    "US.GOOGL": 0.1411,
+    "US.JPM": 0.1535,
+    "US.GOOGL": 0.1405,
     "US.XOM": 0.119,
-    "US.LLY": 0.13,
+    "US.LLY": 0.1299,
     "US.MSFT": 0.1251,
-    "US.RTX": 0.1063,
-    "US.WMT": 0.1133,
+    "US.RTX": 0.1073,
+    "US.WMT": 0.1125,
     "US.PG": 0.1122
    },
-   "value": 2106.95
+   "value": 2102.22
   },
   "claude_sectors": {
    "since": "2026-11-02",
    "weights": {
-    "US.XLE": 0.2326,
-    "US.XLF": 0.2604,
-    "US.XLV": 0.2088,
-    "US.XLI": 0.1502,
-    "US.XLK": 0.148
+    "US.XLE": 0.2332,
+    "US.XLF": 0.2603,
+    "US.XLV": 0.2082,
+    "US.XLI": 0.1503,
+    "US.XLK": 0.1479
    },
-   "value": 2036.88
+   "value": 2039.32
   },
   "claude_stocks_daily": {
    "since": "2026-11-04",
    "weights": {
-    "US.JPM": 0.12,
-    "US.GOOGL": 0.0799,
+    "US.JPM": 0.1204,
+    "US.GOOGL": 0.0795,
     "US.XOM": 0.1303,
-    "US.LLY": 0.13,
-    "US.MSFT": 0.1404,
-    "US.RTX": 0.1095,
-    "US.WMT": 0.1101,
-    "US.PG": 0.11,
-    "US.GS": 0.0699
+    "US.LLY": 0.1299,
+    "US.MSFT": 0.1402,
+    "US.RTX": 0.1105,
+    "US.WMT": 0.1092,
+    "US.PG": 0.1099,
+    "US.GS": 0.07
    },
-   "value": 2106.87
+   "value": 2102.74
   }
  },
  "current_targets": {
@@ -675,7 +675,7 @@
    ],
    [
     "2026-11-04",
-    29.4998
+    29.48
    ]
   ],
   "US.SCHZ": [
@@ -1157,7 +1157,7 @@
    ],
    [
     "2026-11-04",
-    22.515
+    22.52
    ]
   ],
   "US.SCHF": [
@@ -1639,7 +1639,7 @@
    ],
    [
     "2026-11-04",
-    27.495
+    27.51
    ]
   ],
   "US.SCHO": [
@@ -2121,7 +2121,7 @@
    ],
    [
     "2026-11-04",
-    23.9478
+    23.95
    ]
   ],
   "US.GLDM": [
@@ -2603,7 +2603,7 @@
    ],
    [
     "2026-11-04",
-    80.31
+    80.38
    ]
   ]
  }
