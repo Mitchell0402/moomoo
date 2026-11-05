@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-04",
+  "date": "2026-11-05",
   "targets": {
     "US.SCHB": 0.67,
     "US.SCHF": 0.0,
@@ -7,9 +7,9 @@
     "US.SCHO": 0.15,
     "US.GLDM": 0.1
   },
-  "rationale": "周二美股止跌回升：标普 500 涨 0.36%、纳指涨 0.83%，结束三连跌；AMD 财报收入增长 44.6%、盘后涨约 5%。中期选举民主党拿下国会两院，盘前期货涨约 0.9%，市场暂时把它当作不确定性落地，不过数据中心监管、国防和药价政策是后续要看的风险。十年期美债收益率约 4.92%，美联储偏鹰，债券部分继续以 1-3 年短债（SCHO）为主；油价在 103 美元上下，随美伊谈判波动。今天有美债季度再融资、ADP 和 ISM 服务业，周五是非农（预期 +5.5 万），事件风险仍在，而 SCHB 高于 10 个月均线约 3.7%，趋势没破，所以仓位不变（67/0/8/15/10），不追着反弹加股票。标准档：搜索 2 次，打开 2 篇（另有 1 篇未能打开）。",
+  "rationale": "周三美股在中期选举尘埃落定后大涨：标普 500 涨约 1.6%，道指涨约 3%，纳指 100 涨约 0.9%，VIX 回落到 16.6 左右；今天盘前期货涨跌互现，反弹有降温迹象。十年期美债收益率降到约 4.85%~4.89%，是 9 月以来低位，ISM 服务业降到 54.5（三个月低点），ADP 新增就业 8.6 万高于预期，经济没有转弱太多。美联储偏鹰、油价在选举后大幅回落是主要变量，AI 监管担忧让英伟达等芯片股走弱。明天是 10 月非农，事件风险没有消失，而 SCHB 高于 10 个月均线约 5%，趋势稳固，所以不追着反弹加股票，也不减，仓位不变（67/0/8/15/10）。标准档：搜索 2 次，打开 1 篇。",
   "sources": [
-    "https://www.tipranks.com/news/stock-market-today-nov-4-futures-rise-after-democrats-sweep-midterm-elections",
-    "https://marketsandnews.com/rates/treasury-quarterly-refunding-november-4-2026-buybacks-yields/"
+    "https://www.home.saxo/en-mena/content/articles/macro/market-quick-take---dow-jumps-3-after-democrats-sweep-congress---5-november-2026-05112026",
+    "https://www.cnbc.com/2026/11/05/treasury-yields-bonds-interest-rates.html"
   ]
 }
