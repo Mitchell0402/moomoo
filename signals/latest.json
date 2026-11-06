@@ -1,15 +1,16 @@
 {
-  "date": "2026-11-05",
+  "date": "2026-11-06",
   "targets": {
-    "US.SCHB": 0.67,
+    "US.SCHB": 0.65,
     "US.SCHF": 0.0,
     "US.SCHZ": 0.08,
-    "US.SCHO": 0.15,
+    "US.SCHO": 0.17,
     "US.GLDM": 0.1
   },
-  "rationale": "周三美股在中期选举尘埃落定后大涨：标普 500 涨约 1.6%，道指涨约 3%，纳指 100 涨约 0.9%，VIX 回落到 16.6 左右；今天盘前期货涨跌互现，反弹有降温迹象。十年期美债收益率降到约 4.85%~4.89%，是 9 月以来低位，ISM 服务业降到 54.5（三个月低点），ADP 新增就业 8.6 万高于预期，经济没有转弱太多。美联储偏鹰、油价在选举后大幅回落是主要变量，AI 监管担忧让英伟达等芯片股走弱。明天是 10 月非农，事件风险没有消失，而 SCHB 高于 10 个月均线约 5%，趋势稳固，所以不追着反弹加股票，也不减，仓位不变（67/0/8/15/10）。标准档：搜索 2 次，打开 1 篇。",
+  "rationale": "周四美股暴跌：标普 500 跌 4.36%、纳指跌 5.52%、费城半导体指数跌 12%，是 2025 年 4 月以来最差的一天，起因是市场担心民主党拿下国会后会收紧数据中心监管；周五盘前纳指期货反弹约 1.4%、标普期货约 +0.3%，道指期货 -0.8%，亚洲市场（日经 -5.9%、韩国 -6%）仍在大跌。美联储克利夫兰联储主席哈马克说利率需要进入限制性区间、倾向小幅多次加息，债市没有避险保护，所以债券里继续偏短债。今天是 10 月非农（预期 +5.9 万、失业率 4.2%），SCHB 收盘 28.20 只比 10 个月均线高约 0.8%，趋势缓冲很薄；今天如果趋势翻转，我的指令会按规则被拒绝、换成基准，属预期。因此在允许范围内小幅防御：股票从 67% 降到下限 65%，多出的 2% 放进短债 SCHO（15%→17%），黄金 10% 不动；仍不大幅动，因为一天的暴跌不等于趋势破位。加查档（前一日标普跌超 2%）：搜索 2 次，打开 2 篇（另有 2 篇前一天已读）。",
   "sources": [
-    "https://www.home.saxo/en-mena/content/articles/macro/market-quick-take---dow-jumps-3-after-democrats-sweep-congress---5-november-2026-05112026",
-    "https://www.cnbc.com/2026/11/05/treasury-yields-bonds-interest-rates.html"
+    "https://www.tradingkey.com/analysis/stocks/us-stocks/262284414-us-stocks-close-nasdaq-sp500-dow-enters-correction-ai-selloff-tradingkey",
+    "https://www.tipranks.com/news/stock-market-today-nov-6-futures-mixed-as-nasdaq-futures-rebound-after-tech-selloff",
+    "https://cnbc.com/2026/11/05/qualcomm-earnings-chip-stocks-election.html"
   ]
 }
