@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-06",
+  "date": "2026-11-09",
   "targets": {
     "US.SCHB": 0.65,
     "US.SCHF": 0.0,
@@ -7,10 +7,10 @@
     "US.SCHO": 0.17,
     "US.GLDM": 0.1
   },
-  "rationale": "周四美股暴跌：标普 500 跌 4.36%、纳指跌 5.52%、费城半导体指数跌 12%，是 2025 年 4 月以来最差的一天，起因是市场担心民主党拿下国会后会收紧数据中心监管；周五盘前纳指期货反弹约 1.4%、标普期货约 +0.3%，道指期货 -0.8%，亚洲市场（日经 -5.9%、韩国 -6%）仍在大跌。美联储克利夫兰联储主席哈马克说利率需要进入限制性区间、倾向小幅多次加息，债市没有避险保护，所以债券里继续偏短债。今天是 10 月非农（预期 +5.9 万、失业率 4.2%），SCHB 收盘 28.20 只比 10 个月均线高约 0.8%，趋势缓冲很薄；今天如果趋势翻转，我的指令会按规则被拒绝、换成基准，属预期。因此在允许范围内小幅防御：股票从 67% 降到下限 65%，多出的 2% 放进短债 SCHO（15%→17%），黄金 10% 不动；仍不大幅动，因为一天的暴跌不等于趋势破位。加查档（前一日标普跌超 2%）：搜索 2 次，打开 2 篇（另有 2 篇前一天已读）。",
+  "rationale": "10 月非农远超预期：新增 16.5 万（预期 5.9 万），失业率降到 4.1%，时薪同比 3.1%；CME 显示 12 月加息概率约 77%，两年期美债约 4.52%、十年期约 4.87%。周一盘前美股期货上涨（道指约 +0.8%、标普约 +0.4%、纳指 100 约 +0.2%），VIX 回落到 23 左右；英伟达因 CEO 调查消息盘前跌约 4%，但大盘没被拖累，亚洲股市周一反弹。油价跌到 88 美元上下，黄金反弹到约 4,120 美元。美联储偏鹰且本周还有通胀数据，债券里继续以短债（SCHO）为主；SCHB 周五收盘 28.30，高于 10 个月均线约 1.1%，缓冲仍薄，所以维持上周五的小幅防御仓位，不急着回补股票，也不继续减：65/0/8/17/10。标准档：搜索 2 次，打开 2 篇（外加每周选股复核共用）。",
   "sources": [
-    "https://www.tradingkey.com/analysis/stocks/us-stocks/262284414-us-stocks-close-nasdaq-sp500-dow-enters-correction-ai-selloff-tradingkey",
-    "https://www.tipranks.com/news/stock-market-today-nov-6-futures-mixed-as-nasdaq-futures-rebound-after-tech-selloff",
-    "https://cnbc.com/2026/11/05/qualcomm-earnings-chip-stocks-election.html"
+    "https://www.investmentnews.com/fixed-income/october-jobs-report-beats-forecasts-lifting-december-fed-hike-odds/268915",
+    "https://finance.yahoo.com/markets/live/stock-market-today-monday-november-9-dow-sp-500-nasdaq-nvidia-090535419.html",
+    "https://www.cnbc.com/2026/11/06/jobs-report-october-2026.html"
   ]
 }

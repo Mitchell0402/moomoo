@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-09",
+  "targets": {
+    "US.SCHB": 0.65,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.08,
+    "US.SCHO": 0.17,
+    "US.GLDM": 0.1
+  },
+  "rationale": "10 月非农远超预期：新增 16.5 万（预期 5.9 万），失业率降到 4.1%，时薪同比 3.1%；CME 显示 12 月加息概率约 77%，两年期美债约 4.52%、十年期约 4.87%。周一盘前美股期货上涨（道指约 +0.8%、标普约 +0.4%、纳指 100 约 +0.2%），VIX 回落到 23 左右；英伟达因 CEO 调查消息盘前跌约 4%，但大盘没被拖累，亚洲股市周一反弹。油价跌到 88 美元上下，黄金反弹到约 4,120 美元。美联储偏鹰且本周还有通胀数据，债券里继续以短债（SCHO）为主；SCHB 周五收盘 28.30，高于 10 个月均线约 1.1%，缓冲仍薄，所以维持上周五的小幅防御仓位，不急着回补股票，也不继续减：65/0/8/17/10。标准档：搜索 2 次，打开 2 篇（外加每周选股复核共用）。",
+  "sources": [
+    "https://www.investmentnews.com/fixed-income/october-jobs-report-beats-forecasts-lifting-december-fed-hike-odds/268915",
+    "https://finance.yahoo.com/markets/live/stock-market-today-monday-november-9-dow-sp-500-nasdaq-nvidia-090535419.html",
+    "https://www.cnbc.com/2026/11/06/jobs-report-october-2026.html"
+  ]
+}
