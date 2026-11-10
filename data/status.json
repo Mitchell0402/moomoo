@@ -1,6 +1,6 @@
 {
  "host": "PC",
- "time": "2026-11-10T16:10:00",
+ "time": "2026-11-10T16:16:54",
  "trd_env": "SIMULATE",
  "managed_value": 1963.54,
  "benchmark_value": 1981.13,
@@ -51,9 +51,9 @@
   "permanent": 1987.12,
   "dividend": 2166.16,
   "managed_futures": 1957.99,
-  "sector_momentum": 1991.16,
+  "sector_momentum": 1991.05,
   "claude_stocks": 2074.89,
-  "claude_sectors": 2004.77,
+  "claude_sectors": 2004.67,
   "claude_stocks_daily": 2073.31
  },
  "guards": {
@@ -95,11 +95,11 @@
   "sector_momentum": {
    "since": "2026-11",
    "weights": {
-    "US.XLV": 0.3485,
-    "US.XLE": 0.3069,
+    "US.XLV": 0.3484,
+    "US.XLE": 0.307,
     "US.XLF": 0.3446
    },
-   "value": 1991.16
+   "value": 1991.05
   },
   "claude_stocks": {
    "since": "2026-11-09",
@@ -126,7 +126,7 @@
     "US.XLK": 0.1481,
     "US.XLP": 0.1001
    },
-   "value": 2004.77
+   "value": 2004.67
   },
   "claude_stocks_daily": {
    "since": "2026-11-10",
