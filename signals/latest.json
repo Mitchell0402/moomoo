@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10",
+  "date": "2026-11-11",
   "targets": {
     "US.SCHB": 0.65,
     "US.SCHF": 0.0,
@@ -7,10 +7,9 @@
     "US.SCHO": 0.17,
     "US.GLDM": 0.1
   },
-  "rationale": "周一美股大幅反弹：标普 500 约涨 2.4%、纳指约涨 2.7%（盘中数据），油价大跌带动通胀担忧缓解，特朗普淡化再次打击伊朗的说法；英伟达因 CEO 被调查消息跌约 6%，但半导体指数涨超 6%。不过 12 月加息概率仍在 70%~80%，两年期和十年期美债收益率今天没有查到可靠新数据（周四十年期约 4.84%）。今天 8:30 公布 10 月 CPI（预测环比约 0.2%~0.3%），在我这次分析之后，结果可能让市场大幅摆动；SCHB 缓冲虽因反弹拉宽到均线上方约 3.6%，但不因一天大涨就追回股票，等 CPI 和美联储信号更清楚，维持 65/0/8/17/10。风险：CPI 偏热会重新引发抛售，触发趋势护栏的距离仍不远。加查档（前一日标普涨超 2%）：搜索 6 次，打开 3 篇（其中 1 篇打不开，只用 2 篇）。",
+  "rationale": "周二公布的 10 月 CPI 偏热：整体环比 +0.4%（预期 0.3%），核心 +0.3%（预期 0.2%）；美联储理事沃勒表示，核心 CPI 达到 0.3% 左右时，12 月应当考虑加息 50 个基点（他本人倾向 25 个基点）。公布前纳指 ETF 盘前约跌 1%；周二账户小幅下跌 0.5%，SCHB 收盘 28.90，仍高于 10 个月均线（28.01）约 3.2%，趋势护栏没有触发。本周后面：周四有初请失业金和纽约联储主席威廉姆斯讲话，周五是 PPI。现有 65/0/8/17/10 已经是允许范围内最防御的股票比例（股票下限 65%），债券里短债（SCHO）占大头，继续不动：65/0/8/17/10。风险：加息预期继续升温会压估值，SCHB 若跌破均线，程序会按规则把股票压到 40%。标准档：搜索 5 次，打开 4 篇（其中 2 篇是旧文章、1 篇打不开，实际只用 1 篇；CPI 数字来自 1 篇二手转述，没找到 10 日收盘价和 10 年期收益率，没有引用）。",
   "sources": [
-    "https://www.kitco.com/news/off-the-wire/2026-11-09/wall-st-jumps-back-oil-slide-eases-inflation-worries-nvidia-slumps",
-    "https://www.regardsofwallstreet.com/news/stock-market-week-ahead-november-9-2026",
-    "https://tech-insider.org/wall-st-rally-oil-slide-inflation-nvidia-drops-s-and-p-2-05-percent-2026/"
+    "https://www.stocktitan.net/articles/october-2026-cpi-inflation-report",
+    "https://www.bls.gov/news.release/archives/cpi_11102026.htm"
   ]
 }
