@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-11-11T16:10:01",
+ "time": "2026-11-12T10:30:01",
  "trd_env": "SIMULATE",
- "managed_value": 1976.75,
- "benchmark_value": 1994.89,
- "nav": 1976.75,
+ "managed_value": 1966.11,
+ "benchmark_value": 1987.18,
+ "nav": 1966.11,
  "net_deposits": 0.0,
- "drawdown": 0.0175,
+ "drawdown": 0.0228,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,11 +15,11 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6511,
-  "US.SCHZ": 0.0793,
+  "US.SCHB": 0.6521,
+  "US.SCHZ": 0.0794,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1449,
-  "US.GLDM": 0.0797
+  "US.SCHO": 0.1456,
+  "US.GLDM": 0.0776
  },
  "targets": {
   "US.SCHB": 0.65,
@@ -29,37 +29,37 @@
   "US.GLDM": 0.1
  },
  "notes": [
-  "采用 Claude 2026-11-11 的指令",
-  "最大偏离 2.5%，未超过 5%，今天不交易"
+  "采用 Claude 2026-11-12 的指令",
+  "最大偏离 2.4%，未超过 5%，今天不交易"
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1967.55,
-  "fixed_80_20": 1981.22,
-  "fixed_60_40": 1994.89,
-  "fixed_50_50": 2001.73,
-  "trend_100": 1967.55,
-  "trend_80_30": 1981.22,
-  "dual_momentum": 1967.55,
-  "vol_target": 1977.16,
-  "risk_parity": 2018.85,
-  "baseline": 1978.85,
-  "intraday": 1920.1,
-  "nasdaq_100": 1840.07,
-  "sp500_2x": 1896.62,
-  "three_fund": 1988.22,
-  "permanent": 1987.14,
-  "dividend": 2177.65,
-  "managed_futures": 1972.46,
-  "sector_momentum": 2006.47,
-  "claude_stocks": 2079.99,
-  "claude_sectors": 2027.71,
-  "claude_stocks_daily": 2079.38
+  "fixed_100": 1960.16,
+  "fixed_80_20": 1973.67,
+  "fixed_60_40": 1987.18,
+  "fixed_50_50": 1993.93,
+  "trend_100": 1960.16,
+  "trend_80_30": 1973.67,
+  "dual_momentum": 1960.16,
+  "vol_target": 1969.59,
+  "risk_parity": 2010.86,
+  "baseline": 1965.89,
+  "intraday": 1925.09,
+  "nasdaq_100": 1829.45,
+  "sp500_2x": 1885.2,
+  "three_fund": 1979.08,
+  "permanent": 1966.05,
+  "dividend": 2180.37,
+  "managed_futures": 1969.04,
+  "sector_momentum": 2009.31,
+  "claude_stocks": 2088.37,
+  "claude_sectors": 2024.6,
+  "claude_stocks_daily": 2086.02
  },
  "guards": {
   "trend": {
-   "price": 29.25,
-   "sma": 28.0251,
+   "price": 29.1401,
+   "sma": 28.0373,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,54 +95,54 @@
   "sector_momentum": {
    "since": "2026-11",
    "weights": {
-    "US.XLV": 0.3459,
-    "US.XLE": 0.3103,
-    "US.XLF": 0.3439
+    "US.XLV": 0.3446,
+    "US.XLE": 0.3125,
+    "US.XLF": 0.3429
    },
-   "value": 2006.47
+   "value": 2009.31
   },
   "claude_stocks": {
    "since": "2026-11-09",
    "weights": {
-    "US.JPM": 0.15,
-    "US.GOOGL": 0.1217,
-    "US.XOM": 0.0906,
-    "US.LLY": 0.1317,
-    "US.MSFT": 0.0952,
-    "US.RTX": 0.1122,
-    "US.WMT": 0.1297,
-    "US.PG": 0.1292,
-    "US.JNJ": 0.0397
+    "US.JPM": 0.1492,
+    "US.GOOGL": 0.1221,
+    "US.XOM": 0.0911,
+    "US.LLY": 0.1318,
+    "US.MSFT": 0.0957,
+    "US.RTX": 0.1108,
+    "US.WMT": 0.1298,
+    "US.PG": 0.1297,
+    "US.JNJ": 0.0399
    },
-   "value": 2079.99
+   "value": 2088.37
   },
   "claude_sectors": {
    "since": "2026-11-09",
    "weights": {
     "US.XLF": 0.2497,
-    "US.XLV": 0.1983,
-    "US.XLE": 0.1514,
-    "US.XLI": 0.15,
-    "US.XLK": 0.1512,
-    "US.XLP": 0.0995
+    "US.XLV": 0.1982,
+    "US.XLE": 0.1529,
+    "US.XLI": 0.1495,
+    "US.XLK": 0.15,
+    "US.XLP": 0.0997
    },
-   "value": 2027.71
+   "value": 2024.6
   },
   "claude_stocks_daily": {
-   "since": "2026-11-11",
+   "since": "2026-11-12",
    "weights": {
-    "US.JPM": 0.1198,
-    "US.GOOGL": 0.0803,
-    "US.XOM": 0.0996,
-    "US.LLY": 0.1303,
-    "US.MSFT": 0.0996,
-    "US.RTX": 0.1101,
-    "US.WMT": 0.1308,
-    "US.PG": 0.1295,
-    "US.GS": 0.0699,
-    "US.JNJ": 0.0301
+    "US.JPM": 0.12,
+    "US.GOOGL": 0.08,
+    "US.XOM": 0.1,
+    "US.LLY": 0.13,
+    "US.MSFT": 0.1,
+    "US.RTX": 0.11,
+    "US.WMT": 0.13,
+    "US.PG": 0.13,
+    "US.GS": 0.07,
+    "US.JNJ": 0.03
    },
-   "value": 2079.38
+   "value": 2086.02
   }
  },
  "current_targets": {
@@ -200,10 +200,6 @@
  },
  "daily_closes": {
   "US.SCHB": [
-   [
-    "2026-05-22",
-    28.5764
-   ],
    [
     "2026-05-26",
     28.7753
@@ -679,13 +675,13 @@
    [
     "2026-11-11",
     29.25
+   ],
+   [
+    "2026-11-12",
+    29.1401
    ]
   ],
   "US.SCHZ": [
-   [
-    "2026-05-22",
-    22.5052
-   ],
    [
     "2026-05-26",
     22.5933
@@ -1161,13 +1157,13 @@
    [
     "2026-11-11",
     22.4
+   ],
+   [
+    "2026-11-12",
+    22.3099
    ]
   ],
   "US.SCHF": [
-   [
-    "2026-05-22",
-    27.0859
-   ],
    [
     "2026-05-26",
     27.6127
@@ -1643,13 +1639,13 @@
    [
     "2026-11-11",
     27.17
+   ],
+   [
+    "2026-11-12",
+    26.965
    ]
   ],
   "US.SCHO": [
-   [
-    "2026-05-22",
-    23.6744
-   ],
    [
     "2026-05-26",
     23.7137
@@ -2125,13 +2121,13 @@
    [
     "2026-11-11",
     23.87
+   ],
+   [
+    "2026-11-12",
+    23.8533
    ]
   ],
   "US.GLDM": [
-   [
-    "2026-05-22",
-    89.21
-   ],
    [
     "2026-05-26",
     89.21
@@ -2607,6 +2603,10 @@
    [
     "2026-11-11",
     78.81
+   ],
+   [
+    "2026-11-12",
+    76.32
    ]
   ]
  }
