@@ -1,12 +1,12 @@
 {
  "host": "PC",
- "time": "2026-11-16T14:30:01",
+ "time": "2026-11-16T16:10:01",
  "trd_env": "SIMULATE",
- "managed_value": 1936.8,
- "benchmark_value": 1958.32,
- "nav": 1936.8,
+ "managed_value": 1935.62,
+ "benchmark_value": 1956.83,
+ "nav": 1935.62,
  "net_deposits": 0.0,
- "drawdown": 0.0374,
+ "drawdown": 0.038,
  "holdings": {
   "US.SCHB": 44.0,
   "US.SCHZ": 7.0,
@@ -15,11 +15,11 @@
   "US.GLDM": 2.0
  },
  "weights": {
-  "US.SCHB": 0.6468,
-  "US.SCHZ": 0.0805,
+  "US.SCHB": 0.6469,
+  "US.SCHZ": 0.0804,
   "US.SCHF": 0.0,
-  "US.SCHO": 0.1479,
-  "US.GLDM": 0.0789
+  "US.SCHO": 0.148,
+  "US.GLDM": 0.0787
  },
  "targets": {
   "US.SCHB": 0.65,
@@ -34,32 +34,32 @@
  ],
  "orders": [],
  "strategies": {
-  "fixed_100": 1915.08,
-  "fixed_80_20": 1936.7,
-  "fixed_60_40": 1958.32,
-  "fixed_50_50": 1969.13,
-  "trend_100": 1915.08,
-  "trend_80_30": 1936.7,
-  "dual_momentum": 1915.08,
-  "vol_target": 1935.35,
-  "risk_parity": 1996.22,
-  "baseline": 1933.77,
-  "intraday": 1885.52,
-  "nasdaq_100": 1768.94,
-  "sp500_2x": 1797.44,
-  "three_fund": 1949.73,
-  "permanent": 1950.88,
-  "dividend": 2169.8,
-  "managed_futures": 1945.78,
-  "sector_momentum": 1999.67,
-  "claude_stocks": 2074.87,
-  "claude_sectors": 1999.42,
-  "claude_stocks_daily": 2071.38
+  "fixed_100": 1914.41,
+  "fixed_80_20": 1935.62,
+  "fixed_60_40": 1956.83,
+  "fixed_50_50": 1967.43,
+  "trend_100": 1914.41,
+  "trend_80_30": 1935.62,
+  "dual_momentum": 1914.41,
+  "vol_target": 1934.14,
+  "risk_parity": 1994.0,
+  "baseline": 1932.03,
+  "intraday": 1884.2,
+  "nasdaq_100": 1764.06,
+  "sp500_2x": 1797.72,
+  "three_fund": 1947.72,
+  "permanent": 1948.2,
+  "dividend": 2167.98,
+  "managed_futures": 1944.87,
+  "sector_momentum": 2000.8,
+  "claude_stocks": 2072.55,
+  "claude_sectors": 1999.54,
+  "claude_stocks_daily": 2070.08
  },
  "guards": {
   "trend": {
-   "price": 28.47,
-   "sma": 28.0586,
+   "price": 28.46,
+   "sma": 28.0585,
    "below": false
   },
   "stock_cap": 1.0,
@@ -95,54 +95,54 @@
   "sector_momentum": {
    "since": "2026-11",
    "weights": {
-    "US.XLV": 0.3456,
-    "US.XLE": 0.313,
-    "US.XLF": 0.3415
+    "US.XLV": 0.3449,
+    "US.XLE": 0.3129,
+    "US.XLF": 0.3422
    },
-   "value": 1999.67
+   "value": 2000.8
   },
   "claude_stocks": {
    "since": "2026-11-16",
    "weights": {
-    "US.JPM": 0.1493,
-    "US.GOOGL": 0.1207,
-    "US.XOM": 0.0901,
-    "US.LLY": 0.1292,
-    "US.MSFT": 0.101,
-    "US.RTX": 0.109,
-    "US.WMT": 0.1304,
-    "US.PG": 0.1306,
+    "US.JPM": 0.1496,
+    "US.GOOGL": 0.1202,
+    "US.XOM": 0.0902,
+    "US.LLY": 0.1286,
+    "US.MSFT": 0.1009,
+    "US.RTX": 0.1091,
+    "US.WMT": 0.1308,
+    "US.PG": 0.131,
     "US.JNJ": 0.0397
    },
-   "value": 2074.87
+   "value": 2072.55
   },
   "claude_sectors": {
    "since": "2026-11-16",
    "weights": {
-    "US.XLF": 0.2498,
-    "US.XLV": 0.1992,
+    "US.XLF": 0.2505,
+    "US.XLV": 0.199,
     "US.XLE": 0.1503,
-    "US.XLI": 0.1498,
-    "US.XLK": 0.1511,
-    "US.XLP": 0.0999
+    "US.XLI": 0.1497,
+    "US.XLK": 0.1506,
+    "US.XLP": 0.1
    },
-   "value": 1999.42
+   "value": 1999.54
   },
   "claude_stocks_daily": {
    "since": "2026-11-16",
    "weights": {
-    "US.JPM": 0.1194,
-    "US.GOOGL": 0.0804,
+    "US.JPM": 0.1196,
+    "US.GOOGL": 0.08,
     "US.XOM": 0.1001,
-    "US.LLY": 0.1292,
-    "US.MSFT": 0.101,
+    "US.LLY": 0.1285,
+    "US.MSFT": 0.1008,
     "US.RTX": 0.109,
-    "US.WMT": 0.1303,
-    "US.PG": 0.1305,
-    "US.GS": 0.0704,
-    "US.JNJ": 0.0298
+    "US.WMT": 0.1306,
+    "US.PG": 0.1309,
+    "US.GS": 0.0708,
+    "US.JNJ": 0.0297
    },
-   "value": 2071.38
+   "value": 2070.08
   }
  },
  "current_targets": {
@@ -678,7 +678,7 @@
    ],
    [
     "2026-11-16",
-    28.47
+    28.46
    ]
   ],
   "US.SCHZ": [
@@ -1160,7 +1160,7 @@
    ],
    [
     "2026-11-16",
-    22.26
+    22.23
    ]
   ],
   "US.SCHF": [
@@ -1642,7 +1642,7 @@
    ],
    [
     "2026-11-16",
-    26.5886
+    26.53
    ]
   ],
   "US.SCHO": [
@@ -2124,7 +2124,7 @@
    ],
    [
     "2026-11-16",
-    23.875
+    23.88
    ]
   ],
   "US.GLDM": [
@@ -2606,7 +2606,7 @@
    ],
    [
     "2026-11-16",
-    76.455
+    76.16
    ]
   ]
  }
