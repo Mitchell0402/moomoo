@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-18",
+  "date": "2026-11-19",
   "targets": {
     "US.SCHB": 0.65,
     "US.SCHF": 0.0,
@@ -7,9 +7,11 @@
     "US.SCHO": 0.17,
     "US.GLDM": 0.1
   },
-  "rationale": "昨天（11-17）账户的全仓股票对照 -1.1%，SCHB 收盘 28.15，连跌三天；没有查到可靠的周二指数收盘、十年期收益率，也没有找到 10 月零售销售的数字和英伟达周二盘后财报的结果，因此不对这些结果下判断（搜索出来的都是旧年份文章，已丢弃）。背景没变：美联储 12 月加息仍是基本预期，十年期美债收益率在 5.1% 上下（11-13 的二手数据），原油在高位（布伦特约 95 美元，来自一篇日期不明的 AP 稿）。今天下午 2:00 是美联储 10 月会议纪要，可能透露加息的态度；Anthropic 本周上市，新股供给也可能分流科技股资金（只看到 AP 稿说发行价区间 70~78 美元，未核实）。SCHB 28.15 只比 10 个月均线 28.07 高约 0.3%，几乎贴着均线：今天跌破的话，规则基准会翻成 40/50/10，我这份指令按规则会被拒绝、程序改用新基准并卖股买债，这是设计内的保护，不是故障。65/0/8/17/10 已是允许范围内最防御的股票比例，没有新的明确理由再调，维持不变。标准档：搜索 8 次（另有 2 次被拒绝），打开 2 篇（AP 稿读到了，没有发布日期；1 篇打不开）；周二指数收盘、收益率、信用利差、情绪指标、海外市场和油金价格没有查到可靠的当日数据。",
+  "rationale": "昨天（11-18）美股涨跌不一：标普 500 -0.23%（7,323）、纳指 100 +0.42%、道指 -1.11%、罗素 2000 +0.53%，波动不大；英伟达周二盘后财报超预期（收入 1,158 亿美元对预期 1,090 亿，下季度指引 1,300 亿对预期 1,253 亿），盘后涨约 2%，但昨天开盘后涨幅很快消失。美联储 10 月会议纪要偏鹰：多数人支持当时不加息，但几乎所有人认为进一步收紧可能合适，少数人认为 12 月若通胀数据不利可考虑超过 25 个基点；国债收益率反应不大（没有查到具体水平，10 年期约 5.1% 是 11-13 的旧数据），美元和国债有轻微避险买盘。地缘方面特朗普在考虑对伊朗新一轮打击，原油昨天下跌、黄金跌破每盎司 3,800 美元（均来自 Newsquawk 的早间综述，没有具体油价）；Anthropic 定价 83 美元（高于之前报道的区间），首日交易时间没确认。SCHB 昨天收盘 28.10，只比 10 个月均线 28.08 高约 0.1%，几乎贴着均线：今天收盘若跌破，规则基准会翻成 40/50/10，我这份指令会被拒绝、程序改用新基准并卖股买债，这是设计内的保护，不是故障。65/0/8/17/10 已是允许范围内最防御的股票比例，加息风险和油价都没解除，没有新的明确理由再调，维持不变。标准档：搜索 6 次，打开 4 篇（Newsquawk 英伟达财报、Stocktwits、Newsquawk 会议纪要前瞻、Newsquawk 欧洲开盘综述）；信用利差、情绪指标、VIX、具体收益率和油价没有查到可靠数据，其余搜索结果多为旧年份文章，已丢弃。",
   "sources": [
-    "https://stockhub.kr/en/insights/macro-weekly-20261116",
-    "https://www.ajc.com/news/2026/11/tech-stocks-drag-us-futures-lower-ahead-of-nvidia-earnings-and-potential-market-debut-from-anthropic/"
+    "https://www.newsquawk.com/daily/5867-eu-market-open-trump-meets-putin-and-xi-ahead-of-trilateral-weighs-new-iran-strikes-hawkish-fomc-minutes-anthropic-prices-record-ipo",
+    "https://www.newsquawk.com/headlines/nvidia-corporation-nvda-q3-fy27-usd-adj-eps-268-exp-248-revenue-1158bln-exp-109bln",
+    "https://stocktwits.com/news-articles/markets/equity/nvidia-board-chairman-harvey-jones-confirms-huang-will-not-be-reinstated-nvidia-outlook-beats/cNbO96fR9hW",
+    "https://www.newsquawk.com/headlines/primer-fomc-minutes-due-wednesday-1900gmt1400est"
   ]
 }
