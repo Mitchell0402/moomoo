@@ -1,0 +1,202 @@
+{
+  "time": "2026-11-20T10:30:01",
+  "mode": "execute",
+  "notes": [
+    "采用 Claude 2026-11-20 的指令"
+  ],
+  "orders": [
+    {
+      "order_id": "852836",
+      "code": "US.SCHB",
+      "side": "SELL",
+      "qty": 18,
+      "price": 27.27
+    },
+    {
+      "order_id": "852838",
+      "code": "US.SCHZ",
+      "side": "BUY",
+      "qty": 6,
+      "price": 22.48
+    },
+    {
+      "order_id": "852839",
+      "code": "US.SCHO",
+      "side": "BUY",
+      "qty": 14,
+      "price": 24.01
+    }
+  ],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.4,
+    "US.SCHZ": 0.16,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.34,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "funds": {
+    "cash": 998078.56,
+    "us_cash": 998078.56,
+    "usd_net_cash_power": null,
+    "power": 1997941.825,
+    "total_assets": 999863.265
+  },
+  "ledger_mode": "orders",
+  "nav": 1875.54,
+  "nav_units": 1.0,
+  "peak_nav": 2011.98,
+  "net_deposits": 0.0,
+  "baseline": {
+    "regime": "below",
+    "targets": {
+      "US.SCHB": 0.4,
+      "US.SCHZ": 0.5,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.05,
+    "ranges": {
+      "stock": [
+        0.35,
+        0.4
+      ],
+      "bond": [
+        0.45,
+        0.55
+      ],
+      "gold": [
+        0.05,
+        0.15
+      ]
+    }
+  },
+  "signal": {
+    "date": "2026-11-20",
+    "rationale": "昨天（11-19）美股大跌：标普 500 -2.02%（7,175.83，创 4 月底以来收盘新低，连跌六天），纳指 -2.25%，道指 -2.19%，当天早盘一度涨 1.26%、收盘前全线反转；VIX 升到 28.44，是 3 月底以来最高。原因是 AI 泡沫担忧、数据中心投资回报存疑、利率高企，以及英伟达财报后涨幅消退（英伟达 CEO 辞职也被提到）；Anthropic 首日收 97.17 美元，比发行价 83 美元高 17.1%，但没有挡住大盘（均来自第三方报道，数字没有交叉核对）。利率方面十年期收益率约 5.04%，期货显示 12 月加息 25 个基点的概率约 96%，会议纪要偏鹰；亚洲科技股今天跟着重挫。最重要的是：SCHB 昨天收盘 27.55，跌破 10 个月均线 28.08 约 1.9%，趋势护栏触发，股票合计上限被压到 40%，规则基准翻成 40/50/10。昨天的指令（65/0/8/17/10）因此被程序拒绝，改用基准；昨天盘后没有下单，今天 10:30 如果电脑在线，会卖出约 24 个百分点的股票换债券，这是设计内的保护，不是故障。今天写在允许范围内最稳的一档：股票 40%（上限，不再往下压 35%，避免在低点卖得更多），债券 50% 按之前的习惯偏短债（SCHZ 16%、SCHO 34%，加息风险下短债价格更稳），黄金 10%。加查档（前一日标普跌超过 2%、VIX 高于 25）：搜索 9 次，打开 6 篇（其中 1 篇两次都打不开）；信用利差、情绪指标、油金具体价格没有查到可靠数据，搜索结果多为旧年份文章，已丢弃。"
+  },
+  "guards": {
+    "trend": {
+      "price": 27.325,
+      "sma": 28.0865,
+      "below": true
+    },
+    "stock_cap": 0.4,
+    "drawdown_brake": false
+  },
+  "daily_used": 0.0,
+  "prices": {
+    "US.SCHB": 27.325,
+    "US.SCHZ": 22.435,
+    "US.SCHF": 25.165,
+    "US.SCHO": 23.9533,
+    "US.GLDM": 69.9336
+  },
+  "ledger_cash": 88.89,
+  "holdings": {
+    "US.SCHB": 44.0,
+    "US.SCHZ": 7.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 12.0,
+    "US.GLDM": 2.0
+  },
+  "account_cash": 998078.56,
+  "managed_value": 1875.54,
+  "weights": {
+    "US.SCHB": 0.641,
+    "US.SCHZ": 0.0837,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.1533,
+    "US.GLDM": 0.0746
+  },
+  "max_drift": 0.241,
+  "drawdown": 0.0678,
+  "market_state": "AFTERNOON",
+  "funds_after_sells": {
+    "cash": 998568.78,
+    "us_cash": 998568.78,
+    "usd_net_cash_power": null,
+    "power": 1998431.68,
+    "total_assets": 999862.9
+  },
+  "portfolios": {
+    "sector_momentum": {
+      "since": "2026-11",
+      "weights": {
+        "US.XLV": 0.3438,
+        "US.XLE": 0.3138,
+        "US.XLF": 0.3424
+      },
+      "value": 1916.48
+    },
+    "claude_stocks": {
+      "since": "2026-11-16",
+      "weights": {
+        "US.JPM": 0.1448,
+        "US.GOOGL": 0.1211,
+        "US.XOM": 0.0891,
+        "US.LLY": 0.1257,
+        "US.MSFT": 0.0994,
+        "US.RTX": 0.1116,
+        "US.WMT": 0.1362,
+        "US.PG": 0.1331,
+        "US.JNJ": 0.0392
+      },
+      "value": 2017.29
+    },
+    "claude_sectors": {
+      "since": "2026-11-16",
+      "weights": {
+        "US.XLF": 0.25,
+        "US.XLV": 0.1978,
+        "US.XLE": 0.1504,
+        "US.XLI": 0.1509,
+        "US.XLK": 0.1478,
+        "US.XLP": 0.1032
+      },
+      "value": 1920.04
+    },
+    "claude_stocks_daily": {
+      "since": "2026-11-20",
+      "weights": {
+        "US.JPM": 0.12,
+        "US.GOOGL": 0.08,
+        "US.XOM": 0.1,
+        "US.LLY": 0.13,
+        "US.MSFT": 0.1,
+        "US.RTX": 0.11,
+        "US.WMT": 0.13,
+        "US.PG": 0.13,
+        "US.GS": 0.07,
+        "US.JNJ": 0.03
+      },
+      "value": 2006.51
+    }
+  },
+  "strategies": {
+    "fixed_100": 1838.06,
+    "fixed_80_20": 1878.27,
+    "fixed_60_40": 1918.47,
+    "fixed_50_50": 1938.57,
+    "trend_100": 1838.06,
+    "trend_80_30": 1878.27,
+    "dual_momentum": 1838.06,
+    "vol_target": 1883.06,
+    "risk_parity": 1988.95,
+    "baseline": 1866.97,
+    "intraday": 1797.31,
+    "nasdaq_100": 1682.0,
+    "sp500_2x": 1650.63,
+    "three_fund": 1894.05,
+    "permanent": 1903.83,
+    "dividend": 2089.13,
+    "managed_futures": 1903.42,
+    "sector_momentum": 1916.48,
+    "claude_stocks": 2017.29,
+    "claude_sectors": 1920.04,
+    "claude_stocks_daily": 2006.51
+  },
+  "benchmark_value": 1918.47
+}
