@@ -1,17 +1,17 @@
 {
-  "date": "2026-11-19",
+  "date": "2026-11-20",
   "targets": {
-    "US.SCHB": 0.65,
+    "US.SCHB": 0.4,
     "US.SCHF": 0.0,
-    "US.SCHZ": 0.08,
-    "US.SCHO": 0.17,
+    "US.SCHZ": 0.16,
+    "US.SCHO": 0.34,
     "US.GLDM": 0.1
   },
-  "rationale": "昨天（11-18）美股涨跌不一：标普 500 -0.23%（7,323）、纳指 100 +0.42%、道指 -1.11%、罗素 2000 +0.53%，波动不大；英伟达周二盘后财报超预期（收入 1,158 亿美元对预期 1,090 亿，下季度指引 1,300 亿对预期 1,253 亿），盘后涨约 2%，但昨天开盘后涨幅很快消失。美联储 10 月会议纪要偏鹰：多数人支持当时不加息，但几乎所有人认为进一步收紧可能合适，少数人认为 12 月若通胀数据不利可考虑超过 25 个基点；国债收益率反应不大（没有查到具体水平，10 年期约 5.1% 是 11-13 的旧数据），美元和国债有轻微避险买盘。地缘方面特朗普在考虑对伊朗新一轮打击，原油昨天下跌、黄金跌破每盎司 3,800 美元（均来自 Newsquawk 的早间综述，没有具体油价）；Anthropic 定价 83 美元（高于之前报道的区间），首日交易时间没确认。SCHB 昨天收盘 28.10，只比 10 个月均线 28.08 高约 0.1%，几乎贴着均线：今天收盘若跌破，规则基准会翻成 40/50/10，我这份指令会被拒绝、程序改用新基准并卖股买债，这是设计内的保护，不是故障。65/0/8/17/10 已是允许范围内最防御的股票比例，加息风险和油价都没解除，没有新的明确理由再调，维持不变。标准档：搜索 6 次，打开 4 篇（Newsquawk 英伟达财报、Stocktwits、Newsquawk 会议纪要前瞻、Newsquawk 欧洲开盘综述）；信用利差、情绪指标、VIX、具体收益率和油价没有查到可靠数据，其余搜索结果多为旧年份文章，已丢弃。",
+  "rationale": "昨天（11-19）美股大跌：标普 500 -2.02%（7,175.83，创 4 月底以来收盘新低，连跌六天），纳指 -2.25%，道指 -2.19%，当天早盘一度涨 1.26%、收盘前全线反转；VIX 升到 28.44，是 3 月底以来最高。原因是 AI 泡沫担忧、数据中心投资回报存疑、利率高企，以及英伟达财报后涨幅消退（英伟达 CEO 辞职也被提到）；Anthropic 首日收 97.17 美元，比发行价 83 美元高 17.1%，但没有挡住大盘（均来自第三方报道，数字没有交叉核对）。利率方面十年期收益率约 5.04%，期货显示 12 月加息 25 个基点的概率约 96%，会议纪要偏鹰；亚洲科技股今天跟着重挫。最重要的是：SCHB 昨天收盘 27.55，跌破 10 个月均线 28.08 约 1.9%，趋势护栏触发，股票合计上限被压到 40%，规则基准翻成 40/50/10。昨天的指令（65/0/8/17/10）因此被程序拒绝，改用基准；昨天盘后没有下单，今天 10:30 如果电脑在线，会卖出约 24 个百分点的股票换债券，这是设计内的保护，不是故障。今天写在允许范围内最稳的一档：股票 40%（上限，不再往下压 35%，避免在低点卖得更多），债券 50% 按之前的习惯偏短债（SCHZ 16%、SCHO 34%，加息风险下短债价格更稳），黄金 10%。加查档（前一日标普跌超过 2%、VIX 高于 25）：搜索 9 次，打开 6 篇（其中 1 篇两次都打不开）；信用利差、情绪指标、油金具体价格没有查到可靠数据，搜索结果多为旧年份文章，已丢弃。",
   "sources": [
-    "https://www.newsquawk.com/daily/5867-eu-market-open-trump-meets-putin-and-xi-ahead-of-trilateral-weighs-new-iran-strikes-hawkish-fomc-minutes-anthropic-prices-record-ipo",
-    "https://www.newsquawk.com/headlines/nvidia-corporation-nvda-q3-fy27-usd-adj-eps-268-exp-248-revenue-1158bln-exp-109bln",
-    "https://stocktwits.com/news-articles/markets/equity/nvidia-board-chairman-harvey-jones-confirms-huang-will-not-be-reinstated-nvidia-outlook-beats/cNbO96fR9hW",
-    "https://www.newsquawk.com/headlines/primer-fomc-minutes-due-wednesday-1900gmt1400est"
+    "https://247wallst.com/investing/2026/11/20/the-sp-500-just-had-its-biggest-reversal-since-march-2020/",
+    "https://www.newsquawk.com/headlines/newsquawk-daily-european-equity-opening-news---20th-november-2026",
+    "https://www.stocktitan.net/articles/anthropic-ipo-live-ant-first-trading-day-2026",
+    "https://www.newsquawk.com/headlines/market-update-asia-pac-stocks-are-lower-following-the-broad-risk-off-mood-on-wall-st-where-the-major-indices-fell-over-2-despite-anthropic-rallying-in-its-record-debut"
   ]
 }
