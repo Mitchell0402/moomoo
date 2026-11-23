@@ -1,18 +1,1 @@
-{
-  "date": "2026-11-20",
-  "claude_stocks_daily": {
-    "targets": {
-      "US.JPM": 0.12,
-      "US.GOOGL": 0.08,
-      "US.XOM": 0.1,
-      "US.LLY": 0.13,
-      "US.MSFT": 0.1,
-      "US.RTX": 0.11,
-      "US.WMT": 0.13,
-      "US.PG": 0.13,
-      "US.GS": 0.07,
-      "US.JNJ": 0.03
-    },
-    "rationale": "不变。昨天大盘重挫但主要集中在 AI 和芯片股，持仓偏防御和价值股，没有明确新理由换股，原样持有，避免交易成本。"
-  }
-}
+{"date": "2026-11-23", "claude_stocks_daily": {"targets": {"US.JPM": 0.12, "US.GOOGL": 0.08, "US.XOM": 0.1, "US.LLY": 0.13, "US.MSFT": 0.1, "US.RTX": 0.11, "US.WMT": 0.13, "US.PG": 0.13, "US.GS": 0.07, "US.JNJ": 0.03}, "rationale": "不变。上周五大盘重挫，主要集中在 AI 和芯片股，持仓里没有英伟达，偏防御和价值，没有明确新理由换股，原样持有，避免交易成本。"}}

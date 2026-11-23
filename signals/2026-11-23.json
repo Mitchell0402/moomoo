@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-23",
+  "targets": {
+    "US.SCHB": 0.37,
+    "US.SCHF": 0.0,
+    "US.SCHZ": 0.17,
+    "US.SCHO": 0.36,
+    "US.GLDM": 0.1
+  },
+  "rationale": "上周五（11-20）美股全线重挫：据 Breitbart 和 Fox Business，标普 500 单日跌约 3.6%~3.7%，连跌七天，是 2020 年 2 月以来最长连跌；纳指跌约 5.1%~5.3%，抹掉今年涨幅；道指跌约 900~950 点（约 1.9%）；标普和道指都进入回调区（较高点跌超 10%）。一周来看标普是 2025 年 4 月以来最差的一周，纳指是 2020 年 3 月以来最差的一周。原因是 AI 股抛售：英伟达财报后仍跌约 14%，芯片股普跌，Anthropic 上市第二天跌约 9%，市场怀疑 AI 投入能不能变成利润；VIX 收在 2025 年 4 月以来最高（具体数字没查到）。避险资金买入：十年期收益率降到约 4.91%（周四 5.04%），黄金上涨；12 月加息 25 个基点仍是主流预期（美联储理事 Waller 主张 12 月甚至可以加 50 个基点，市场只给约 5% 的概率）。我们的账户：SCHB 周五收 26.60，比 10 个月均线 28.08 低约 5%，趋势护栏继续生效，股票上限 40%，周五已完成卖股换债。今天的指令写在允许范围内，对齐账户当前实际持仓（股票约 37%、债券约 53%、黄金约 10%），这样今天不需要交易：不在暴跌后追加股票，也不在低点继续卖。债券仍按习惯偏短债（SCHZ 17%、SCHO 36%）。本周三 11-25 有第三季度 GDP 和 10 月 PCE，周四 11-26 感恩节休市。加查档（前一日标普跌超过 2%、VIX 高于 25）：搜索 11 次，打开 5 篇（1 篇被网站拒绝，1 篇日期是旧的已丢弃）；周一早盘期货和 VIX 具体数字没有查到可靠来源；周五数字来自第三方媒体，没有交叉核对。",
+  "sources": [
+    "https://www.breitbart.com/economy/2026/11/20/stocks-plunge-as-ai-selloff-pushes-sp-500-and-dow-into-correction/",
+    "https://www.foxbusiness.com/markets/wall-street-suffers-historic-losses-dow-sp-500-plunge-correction-territory",
+    "https://investinglive.com/central-banks/four-fed-officials-push-for-more-hikes-as-waller-floats-50bp-to-break-3-inflation-mindset/"
+  ]
+}
