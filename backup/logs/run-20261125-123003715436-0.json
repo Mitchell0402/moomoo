@@ -1,0 +1,174 @@
+{
+  "time": "2026-11-25T12:30:01",
+  "mode": "execute",
+  "notes": [
+    "采用 Claude 2026-11-23 的指令",
+    "最大偏离 2.7%，未超过 5%，今天不交易"
+  ],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.37,
+    "US.SCHZ": 0.17,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.36,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "funds": {
+    "cash": 998096.866,
+    "us_cash": 998096.866,
+    "usd_net_cash_power": null,
+    "power": 1997958.252,
+    "total_assets": 999861.386
+  },
+  "ledger_mode": "orders",
+  "nav": 1873.87,
+  "nav_units": 1.0,
+  "peak_nav": 2011.98,
+  "net_deposits": 0.0,
+  "baseline": {
+    "regime": "below",
+    "targets": {
+      "US.SCHB": 0.4,
+      "US.SCHZ": 0.5,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.05,
+    "ranges": {
+      "stock": [
+        0.35,
+        0.4
+      ],
+      "bond": [
+        0.45,
+        0.55
+      ],
+      "gold": [
+        0.05,
+        0.15
+      ]
+    }
+  },
+  "signal": {
+    "date": "2026-11-23",
+    "rationale": "上周五（11-20）美股全线重挫：据 Breitbart 和 Fox Business，标普 500 单日跌约 3.6%~3.7%，连跌七天，是 2020 年 2 月以来最长连跌；纳指跌约 5.1%~5.3%，抹掉今年涨幅；道指跌约 900~950 点（约 1.9%）；标普和道指都进入回调区（较高点跌超 10%）。一周来看标普是 2025 年 4 月以来最差的一周，纳指是 2020 年 3 月以来最差的一周。原因是 AI 股抛售：英伟达财报后仍跌约 14%，芯片股普跌，Anthropic 上市第二天跌约 9%，市场怀疑 AI 投入能不能变成利润；VIX 收在 2025 年 4 月以来最高（具体数字没查到）。避险资金买入：十年期收益率降到约 4.91%（周四 5.04%），黄金上涨；12 月加息 25 个基点仍是主流预期（美联储理事 Waller 主张 12 月甚至可以加 50 个基点，市场只给约 5% 的概率）。我们的账户：SCHB 周五收 26.60，比 10 个月均线 28.08 低约 5%，趋势护栏继续生效，股票上限 40%，周五已完成卖股换债。今天的指令写在允许范围内，对齐账户当前实际持仓（股票约 37%、债券约 53%、黄金约 10%），这样今天不需要交易：不在暴跌后追加股票，也不在低点继续卖。债券仍按习惯偏短债（SCHZ 17%、SCHO 36%）。本周三 11-25 有第三季度 GDP 和 10 月 PCE，周四 11-26 感恩节休市。加查档（前一日标普跌超过 2%、VIX 高于 25）：搜索 11 次，打开 5 篇（1 篇被网站拒绝，1 篇日期是旧的已丢弃）；周一早盘期货和 VIX 具体数字没有查到可靠来源；周五数字来自第三方媒体，没有交叉核对。"
+  },
+  "guards": {
+    "trend": {
+      "price": 27.22,
+      "sma": 28.0977,
+      "below": true
+    },
+    "stock_cap": 0.4,
+    "drawdown_brake": false
+  },
+  "daily_used": 0.0,
+  "prices": {
+    "US.SCHB": 27.22,
+    "US.SCHZ": 22.5953,
+    "US.SCHF": 25.225,
+    "US.SCHO": 23.9901,
+    "US.GLDM": 69.245
+  },
+  "ledger_cash": 110.18,
+  "holdings": {
+    "US.SCHB": 26.0,
+    "US.SCHZ": 13.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 26.0,
+    "US.GLDM": 2.0
+  },
+  "account_cash": 998096.866,
+  "managed_value": 1873.87,
+  "weights": {
+    "US.SCHB": 0.3777,
+    "US.SCHZ": 0.1568,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.3329,
+    "US.GLDM": 0.0739
+  },
+  "max_drift": 0.0271,
+  "drawdown": 0.0686,
+  "market_state": "AFTERNOON",
+  "portfolios": {
+    "sector_momentum": {
+      "since": "2026-11",
+      "weights": {
+        "US.XLV": 0.3491,
+        "US.XLE": 0.3093,
+        "US.XLF": 0.3417
+      },
+      "value": 1931.18
+    },
+    "claude_stocks": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1476,
+        "US.GOOGL": 0.1144,
+        "US.XOM": 0.0901,
+        "US.LLY": 0.1316,
+        "US.MSFT": 0.0963,
+        "US.RTX": 0.1111,
+        "US.WMT": 0.1346,
+        "US.PG": 0.1337,
+        "US.JNJ": 0.0407
+      },
+      "value": 2014.59
+    },
+    "claude_sectors": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.XLF": 0.2524,
+        "US.XLV": 0.2055,
+        "US.XLE": 0.1511,
+        "US.XLI": 0.149,
+        "US.XLK": 0.1385,
+        "US.XLP": 0.1035
+      },
+      "value": 1926.02
+    },
+    "claude_stocks_daily": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1182,
+        "US.GOOGL": 0.0764,
+        "US.XOM": 0.1002,
+        "US.LLY": 0.1317,
+        "US.MSFT": 0.0964,
+        "US.RTX": 0.1112,
+        "US.WMT": 0.1348,
+        "US.PG": 0.1339,
+        "US.GS": 0.0667,
+        "US.JNJ": 0.0305
+      },
+      "value": 2003.33
+    }
+  },
+  "strategies": {
+    "fixed_100": 1831.0,
+    "fixed_80_20": 1875.53,
+    "fixed_60_40": 1920.06,
+    "fixed_50_50": 1942.33,
+    "trend_100": 1851.2,
+    "trend_80_30": 1885.5,
+    "dual_momentum": 1831.0,
+    "vol_target": 1889.57,
+    "risk_parity": 1998.12,
+    "baseline": 1868.93,
+    "intraday": 1760.56,
+    "nasdaq_100": 1651.85,
+    "sp500_2x": 1630.01,
+    "three_fund": 1896.91,
+    "permanent": 1908.01,
+    "dividend": 2126.21,
+    "managed_futures": 1904.33,
+    "sector_momentum": 1931.18,
+    "claude_stocks": 2014.59,
+    "claude_sectors": 1926.02,
+    "claude_stocks_daily": 2003.33
+  },
+  "benchmark_value": 1920.06
+}
