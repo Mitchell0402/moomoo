@@ -1,6 +1,6 @@
 {
  "host": "PC",
- "time": "2026-11-25T16:10:01",
+ "time": "2026-11-26T10:30:01",
  "trd_env": "SIMULATE",
  "managed_value": 1886.44,
  "benchmark_value": 1934.52,
@@ -51,15 +51,15 @@
   "permanent": 1921.66,
   "dividend": 2133.52,
   "managed_futures": 1917.77,
-  "sector_momentum": 1937.82,
-  "claude_stocks": 2021.62,
-  "claude_sectors": 1941.75,
-  "claude_stocks_daily": 2011.02
+  "sector_momentum": 1938.13,
+  "claude_stocks": 2021.72,
+  "claude_sectors": 1941.88,
+  "claude_stocks_daily": 2011.13
  },
  "guards": {
   "trend": {
    "price": 27.61,
-   "sma": 28.0996,
+   "sma": 28.1043,
    "below": true
   },
   "stock_cap": 0.4,
@@ -96,10 +96,10 @@
    "since": "2026-11",
    "weights": {
     "US.XLV": 0.3481,
-    "US.XLE": 0.3086,
+    "US.XLE": 0.3087,
     "US.XLF": 0.3432
    },
-   "value": 1937.82
+   "value": 1938.13
   },
   "claude_stocks": {
    "since": "2026-11-23",
@@ -114,19 +114,19 @@
     "US.PG": 0.1325,
     "US.JNJ": 0.0404
    },
-   "value": 2021.62
+   "value": 2021.72
   },
   "claude_sectors": {
    "since": "2026-11-23",
    "weights": {
     "US.XLF": 0.2523,
     "US.XLV": 0.204,
-    "US.XLE": 0.1501,
+    "US.XLE": 0.1502,
     "US.XLI": 0.1498,
-    "US.XLK": 0.1415,
+    "US.XLK": 0.1414,
     "US.XLP": 0.1023
    },
-   "value": 1941.75
+   "value": 1941.88
   },
   "claude_stocks_daily": {
    "since": "2026-11-23",
@@ -139,10 +139,10 @@
     "US.RTX": 0.1113,
     "US.WMT": 0.1342,
     "US.PG": 0.1326,
-    "US.GS": 0.0676,
+    "US.GS": 0.0675,
     "US.JNJ": 0.0303
    },
-   "value": 2011.02
+   "value": 2011.13
   }
  },
  "current_targets": {
