@@ -1,0 +1,170 @@
+{
+  "time": "2026-11-27T12:30:01",
+  "mode": "execute",
+  "notes": [
+    "指令日期 2026-11-23 已过期（超过 3 天），用今天的规则基准",
+    "最大偏离 2.4%，未超过 5%，今天不交易"
+  ],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.4,
+    "US.SCHZ": 0.5,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "funds": {
+    "cash": 998088.196,
+    "us_cash": 998088.196,
+    "usd_net_cash_power": null,
+    "power": 1997970.481,
+    "total_assets": 999882.285
+  },
+  "ledger_mode": "orders",
+  "nav": 1897.73,
+  "nav_units": 1.0,
+  "peak_nav": 2011.98,
+  "net_deposits": 0.0,
+  "baseline": {
+    "regime": "below",
+    "targets": {
+      "US.SCHB": 0.4,
+      "US.SCHZ": 0.5,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.05,
+    "ranges": {
+      "stock": [
+        0.35,
+        0.4
+      ],
+      "bond": [
+        0.45,
+        0.55
+      ],
+      "gold": [
+        0.05,
+        0.15
+      ]
+    }
+  },
+  "guards": {
+    "trend": {
+      "price": 28.01,
+      "sma": 28.1062,
+      "below": true
+    },
+    "stock_cap": 0.4,
+    "drawdown_brake": false
+  },
+  "daily_used": 1254.16,
+  "prices": {
+    "US.SCHB": 28.01,
+    "US.SCHZ": 22.4876,
+    "US.SCHF": 25.92,
+    "US.SCHO": 23.97,
+    "US.GLDM": 71.99
+  },
+  "ledger_cash": 103.5,
+  "holdings": {
+    "US.SCHB": 26.0,
+    "US.SCHZ": 41.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 2.0
+  },
+  "account_cash": 998088.196,
+  "managed_value": 1897.73,
+  "weights": {
+    "US.SCHB": 0.3838,
+    "US.SCHZ": 0.4858,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.0759
+  },
+  "max_drift": 0.0241,
+  "drawdown": 0.0568,
+  "market_state": "AFTERNOON",
+  "portfolios": {
+    "sector_momentum": {
+      "since": "2026-11",
+      "weights": {
+        "US.XLV": 0.3457,
+        "US.XLE": 0.3099,
+        "US.XLF": 0.3444
+      },
+      "value": 1957.23
+    },
+    "claude_stocks": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1507,
+        "US.GOOGL": 0.115,
+        "US.XOM": 0.09,
+        "US.LLY": 0.1308,
+        "US.MSFT": 0.0965,
+        "US.RTX": 0.1113,
+        "US.WMT": 0.1339,
+        "US.PG": 0.1315,
+        "US.JNJ": 0.0404
+      },
+      "value": 2037.32
+    },
+    "claude_sectors": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.XLF": 0.2528,
+        "US.XLV": 0.2022,
+        "US.XLE": 0.1505,
+        "US.XLI": 0.1503,
+        "US.XLK": 0.1427,
+        "US.XLP": 0.1015
+      },
+      "value": 1964.37
+    },
+    "claude_stocks_daily": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1206,
+        "US.GOOGL": 0.0767,
+        "US.XOM": 0.1001,
+        "US.LLY": 0.1308,
+        "US.MSFT": 0.0966,
+        "US.RTX": 0.1113,
+        "US.WMT": 0.134,
+        "US.PG": 0.1315,
+        "US.GS": 0.0681,
+        "US.JNJ": 0.0304
+      },
+      "value": 2027.37
+    }
+  },
+  "strategies": {
+    "fixed_100": 1884.14,
+    "fixed_80_20": 1916.08,
+    "fixed_60_40": 1948.03,
+    "fixed_50_50": 1964.0,
+    "trend_100": 1842.37,
+    "trend_80_30": 1895.47,
+    "dual_momentum": 1884.14,
+    "vol_target": 1917.65,
+    "risk_parity": 2004.03,
+    "baseline": 1893.37,
+    "intraday": 1788.39,
+    "nasdaq_100": 1724.64,
+    "sp500_2x": 1723.59,
+    "three_fund": 1930.67,
+    "permanent": 1930.02,
+    "dividend": 2155.58,
+    "managed_futures": 1930.77,
+    "sector_momentum": 1957.23,
+    "claude_stocks": 2037.32,
+    "claude_sectors": 1964.37,
+    "claude_stocks_daily": 2027.37
+  },
+  "benchmark_value": 1948.03
+}
