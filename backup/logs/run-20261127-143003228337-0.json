@@ -1,0 +1,174 @@
+{
+  "time": "2026-11-27T14:30:01",
+  "mode": "execute",
+  "notes": [
+    "采用 Claude 2026-11-27 的指令",
+    "最大偏离 2.4%，未超过 5%，今天不交易"
+  ],
+  "orders": [],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.4,
+    "US.SCHZ": 0.5,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "funds": {
+    "cash": 998088.196,
+    "us_cash": 998088.196,
+    "usd_net_cash_power": null,
+    "power": 1997973.63,
+    "total_assets": 999885.434
+  },
+  "ledger_mode": "orders",
+  "nav": 1899.99,
+  "nav_units": 1.0,
+  "peak_nav": 2011.98,
+  "net_deposits": 0.0,
+  "baseline": {
+    "regime": "below",
+    "targets": {
+      "US.SCHB": 0.4,
+      "US.SCHZ": 0.5,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.05,
+    "ranges": {
+      "stock": [
+        0.35,
+        0.4
+      ],
+      "bond": [
+        0.45,
+        0.55
+      ],
+      "gold": [
+        0.05,
+        0.15
+      ]
+    }
+  },
+  "signal": {
+    "date": "2026-11-27",
+    "rationale": "上周五 11-20 标普 500 跌约 3.7%、纳指跌约 5%，进入回调；周一 11-23 反弹很猛：标普涨约 4.7%、道指涨约 3.0%（收 49,595.31）、纳指涨约 6.5%，原因是 AI 和芯片股大幅反弹，英伟达据报道董事会请回原 CEO 后大涨（均来自第三方媒体，没有交叉核对）。周二、周三从账户数据看只是小幅震荡：SCHB 收 27.66 和 27.61，周五中午 28.01，离 10 个月均线 28.11 只差约 0.3%，趋势护栏仍然生效，但如果周五收盘站上均线，规则基准会翻回 70/20/10，那时程序会按新基准重新调仓，这是设计内的，不是故障。10 月 PCE 本周三公布，我没有查到可靠的结果；期货显示 12 月加息 25 个基点的概率约 96%，周四 11-26 感恩节休市，今天是提前收盘日。重要说明：11-24、11-25 两天的每日分析因为任务中途被打断没有写成，11-23 的指令今天已超过 3 天过期，程序今早自动改用规则基准（卖出 SCHO 26 股、买入 SCHZ 28 股，已成交）。今天写的指令就是规则基准本身：股票 40%、综合债 50%、黄金 10%，和账户当前持仓（股票约 38%、综合债约 49%、黄金约 7.6%）几乎一致，不需要再交易；不再切回短债，避免三天内来回卖买产生的成本。标准档：搜索 8 次（含 1 次扩展搜索），打开 1 篇网页；11-24 到 11-27 的大盘收盘细节和 PCE 结果没有查到可靠来源，已如实标注。"
+  },
+  "guards": {
+    "trend": {
+      "price": 28.08,
+      "sma": 28.1066,
+      "below": true
+    },
+    "stock_cap": 0.4,
+    "drawdown_brake": false
+  },
+  "daily_used": 1254.16,
+  "prices": {
+    "US.SCHB": 28.08,
+    "US.SCHZ": 22.49,
+    "US.SCHF": 25.97,
+    "US.SCHO": 23.97,
+    "US.GLDM": 72.16
+  },
+  "ledger_cash": 103.5,
+  "holdings": {
+    "US.SCHB": 26.0,
+    "US.SCHZ": 41.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 2.0
+  },
+  "account_cash": 998088.196,
+  "managed_value": 1899.99,
+  "weights": {
+    "US.SCHB": 0.3843,
+    "US.SCHZ": 0.4853,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.076
+  },
+  "max_drift": 0.024,
+  "drawdown": 0.0557,
+  "market_state": "AFTER_HOURS_BEGIN",
+  "portfolios": {
+    "sector_momentum": {
+      "since": "2026-11",
+      "weights": {
+        "US.XLV": 0.346,
+        "US.XLE": 0.3099,
+        "US.XLF": 0.3441
+      },
+      "value": 1955.26
+    },
+    "claude_stocks": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1501,
+        "US.GOOGL": 0.1155,
+        "US.XOM": 0.0898,
+        "US.LLY": 0.1306,
+        "US.MSFT": 0.0967,
+        "US.RTX": 0.1116,
+        "US.WMT": 0.1343,
+        "US.PG": 0.1312,
+        "US.JNJ": 0.0403
+      },
+      "value": 2037.77
+    },
+    "claude_sectors": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.XLF": 0.2522,
+        "US.XLV": 0.2021,
+        "US.XLE": 0.1502,
+        "US.XLI": 0.1504,
+        "US.XLK": 0.1436,
+        "US.XLP": 0.1015
+      },
+      "value": 1965.49
+    },
+    "claude_stocks_daily": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1202,
+        "US.GOOGL": 0.077,
+        "US.XOM": 0.0998,
+        "US.LLY": 0.1307,
+        "US.MSFT": 0.0968,
+        "US.RTX": 0.1117,
+        "US.WMT": 0.1344,
+        "US.PG": 0.1313,
+        "US.GS": 0.068,
+        "US.JNJ": 0.0302
+      },
+      "value": 2027.56
+    }
+  },
+  "strategies": {
+    "fixed_100": 1888.85,
+    "fixed_80_20": 1919.9,
+    "fixed_60_40": 1950.94,
+    "fixed_50_50": 1966.46,
+    "trend_100": 1842.57,
+    "trend_80_30": 1897.06,
+    "dual_momentum": 1888.85,
+    "vol_target": 1920.55,
+    "risk_parity": 2005.37,
+    "baseline": 1895.83,
+    "intraday": 1791.25,
+    "nasdaq_100": 1735.32,
+    "sp500_2x": 1731.42,
+    "three_fund": 1933.82,
+    "permanent": 1931.74,
+    "dividend": 2156.49,
+    "managed_futures": 1933.42,
+    "sector_momentum": 1955.26,
+    "claude_stocks": 2037.77,
+    "claude_sectors": 1965.49,
+    "claude_stocks_daily": 2027.56
+  },
+  "benchmark_value": 1950.94
+}
