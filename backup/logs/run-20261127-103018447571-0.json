@@ -1,0 +1,191 @@
+{
+  "time": "2026-11-27T10:30:01",
+  "mode": "execute",
+  "notes": [
+    "指令日期 2026-11-23 已过期（超过 3 天），用今天的规则基准"
+  ],
+  "orders": [
+    {
+      "order_id": "857847",
+      "code": "US.SCHO",
+      "side": "SELL",
+      "qty": 26,
+      "price": 23.93
+    },
+    {
+      "order_id": "857849",
+      "code": "US.SCHZ",
+      "side": "BUY",
+      "qty": 28,
+      "price": 22.57
+    }
+  ],
+  "trd_env": "SIMULATE",
+  "targets": {
+    "US.SCHB": 0.4,
+    "US.SCHZ": 0.5,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.0,
+    "US.GLDM": 0.1
+  },
+  "acc_id": 2863134,
+  "funds": {
+    "cash": 998096.866,
+    "us_cash": 998096.866,
+    "usd_net_cash_power": null,
+    "power": 1997978.452,
+    "total_assets": 999881.586
+  },
+  "ledger_mode": "orders",
+  "nav": 1894.35,
+  "nav_units": 1.0,
+  "peak_nav": 2011.98,
+  "net_deposits": 0.0,
+  "baseline": {
+    "regime": "below",
+    "targets": {
+      "US.SCHB": 0.4,
+      "US.SCHZ": 0.5,
+      "US.SCHF": 0.0,
+      "US.SCHO": 0.0,
+      "US.GLDM": 0.1
+    },
+    "band": 0.05,
+    "ranges": {
+      "stock": [
+        0.35,
+        0.4
+      ],
+      "bond": [
+        0.45,
+        0.55
+      ],
+      "gold": [
+        0.05,
+        0.15
+      ]
+    }
+  },
+  "guards": {
+    "trend": {
+      "price": 27.8601,
+      "sma": 28.1055,
+      "below": true
+    },
+    "stock_cap": 0.4,
+    "drawdown_brake": false
+  },
+  "daily_used": 0.0,
+  "prices": {
+    "US.SCHB": 27.8601,
+    "US.SCHZ": 22.515,
+    "US.SCHF": 25.84,
+    "US.SCHO": 23.985,
+    "US.GLDM": 71.75
+  },
+  "ledger_cash": 110.18,
+  "holdings": {
+    "US.SCHB": 26.0,
+    "US.SCHZ": 13.0,
+    "US.SCHF": 0.0,
+    "US.SCHO": 26.0,
+    "US.GLDM": 2.0
+  },
+  "account_cash": 998096.866,
+  "managed_value": 1894.35,
+  "weights": {
+    "US.SCHB": 0.3824,
+    "US.SCHZ": 0.1545,
+    "US.SCHF": 0.0,
+    "US.SCHO": 0.3292,
+    "US.GLDM": 0.0758
+  },
+  "max_drift": 0.3455,
+  "drawdown": 0.0585,
+  "market_state": "AFTERNOON",
+  "funds_after_sells": {
+    "cash": 998719.606,
+    "us_cash": 998719.606,
+    "usd_net_cash_power": null,
+    "power": 1998599.757,
+    "total_assets": 999880.151
+  },
+  "portfolios": {
+    "sector_momentum": {
+      "since": "2026-11",
+      "weights": {
+        "US.XLV": 0.3446,
+        "US.XLE": 0.3116,
+        "US.XLF": 0.3437
+      },
+      "value": 1955.1
+    },
+    "claude_stocks": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1507,
+        "US.GOOGL": 0.1142,
+        "US.XOM": 0.0907,
+        "US.LLY": 0.1311,
+        "US.MSFT": 0.0966,
+        "US.RTX": 0.1112,
+        "US.WMT": 0.1336,
+        "US.PG": 0.1316,
+        "US.JNJ": 0.0403
+      },
+      "value": 2030.0
+    },
+    "claude_sectors": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.XLF": 0.2528,
+        "US.XLV": 0.202,
+        "US.XLE": 0.1516,
+        "US.XLI": 0.1501,
+        "US.XLK": 0.1419,
+        "US.XLP": 0.1016
+      },
+      "value": 1958.41
+    },
+    "claude_stocks_daily": {
+      "since": "2026-11-23",
+      "weights": {
+        "US.JPM": 0.1206,
+        "US.GOOGL": 0.0762,
+        "US.XOM": 0.1008,
+        "US.LLY": 0.1311,
+        "US.MSFT": 0.0966,
+        "US.RTX": 0.1112,
+        "US.WMT": 0.1337,
+        "US.PG": 0.1316,
+        "US.GS": 0.068,
+        "US.JNJ": 0.0303
+      },
+      "value": 2020.6
+    }
+  },
+  "strategies": {
+    "fixed_100": 1874.06,
+    "fixed_80_20": 1908.52,
+    "fixed_60_40": 1942.98,
+    "fixed_50_50": 1960.2,
+    "trend_100": 1844.62,
+    "trend_80_30": 1893.99,
+    "dual_momentum": 1874.06,
+    "vol_target": 1912.56,
+    "risk_parity": 2003.38,
+    "baseline": 1889.77,
+    "intraday": 1778.82,
+    "nasdaq_100": 1710.72,
+    "sp500_2x": 1702.94,
+    "three_fund": 1924.89,
+    "permanent": 1927.48,
+    "dividend": 2150.75,
+    "managed_futures": 1926.09,
+    "sector_momentum": 1955.1,
+    "claude_stocks": 2030.0,
+    "claude_sectors": 1958.41,
+    "claude_stocks_daily": 2020.6
+  },
+  "benchmark_value": 1942.98
+}
